@@ -1,5 +1,8 @@
 <template>
-  <div class="profile">
+  <div v-if="mfaChecking" class="mfa-gate">
+    <span class="loading-spinner"></span>
+  </div>
+  <div v-else class="profile">
 
     <!-- ── Profile header banner ── -->
     <div class="profile-banner">
@@ -104,31 +107,6 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="phone">Phone Number</label>
-            <input
-              id="phone"
-              v-model="basicForm.phoneNumber"
-              type="tel"
-              class="form-input"
-              placeholder="+1 555 000 0000"
-              autocomplete="tel"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="locale">Locale</label>
-            <select id="locale" v-model="basicForm.locale" class="form-input">
-              <option value="en-US">English (US)</option>
-              <option value="en-GB">English (UK)</option>
-              <option value="fr-FR">Français (France)</option>
-              <option value="de-DE">Deutsch (Deutschland)</option>
-              <option value="es-ES">Español (España)</option>
-              <option value="ja-JP">日本語</option>
-              <option value="zh-CN">中文 (简体)</option>
-            </select>
-          </div>
-
-          <div class="form-group form-group--full">
             <label class="form-label" for="street">Street</label>
             <input
               id="street"
@@ -137,6 +115,18 @@
               class="form-input"
               placeholder="4 Avenue des Champs-Élysées"
               autocomplete="street-address"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone Number</label>
+            <input
+              id="phone"
+              v-model="basicForm.phoneNumber"
+              type="tel"
+              class="form-input"
+              placeholder="+1 555 000 0000"
+              autocomplete="tel"
             />
           </div>
 
@@ -164,7 +154,7 @@
             />
           </div>
 
-          <div class="form-group form-group--full">
+          <div class="form-group">
             <label class="form-label" for="country">Country</label>
             <input
               id="country"
@@ -175,20 +165,28 @@
               autocomplete="country-name"
             />
           </div>
+
+          <div class="form-group">
+            <label class="form-label" for="locale">Language</label>
+            <select id="locale" v-model="basicForm.locale" class="form-input">
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="fr-FR">Français (France)</option>
+              <option value="de-DE">Deutsch (Deutschland)</option>
+              <option value="es-ES">Español (España)</option>
+              <option value="ja-JP">日本語</option>
+              <option value="zh-CN">中文 (简体)</option>
+            </select>
+          </div>
         </div>
 
         <div class="card-actions">
           <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
             Update Profile
           </button>
-          <a
-            href="https://manage.auth0.com/#/users"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-ghost btn-sm"
-          >
-            See in Auth0 ↗
-          </a>
+          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'profileMgmt' } })">
+            Edit in Auth0 ↗
+          </button>
         </div>
       </div>
     </section>
@@ -263,14 +261,9 @@
           <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
             Update Consents
           </button>
-          <a
-            href="https://auth0.com/docs/compliance"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-ghost btn-sm"
-          >
-            See in Auth0 ↗
-          </a>
+          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'pref_center' } })">
+            Edit in Auth0 ↗
+          </button>
         </div>
       </div>
     </section>
@@ -384,10 +377,10 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, nextTick } from 'vue'
+import { reactive, ref, computed, nextTick, onMounted } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
-const { user, getAccessTokenSilently } = useAuth0()
+const { user, getAccessTokenSilently, loginWithRedirect, idTokenClaims } = useAuth0()
 
 // Normalise to always have a trailing slash so claim keys compose cleanly
 const _aud = import.meta.env.VITE_AUTH0_AUDIENCE || ''
@@ -434,6 +427,25 @@ function syncFromToken() {
 
 syncFromToken()
 
+const MFA_ACR = 'http://schemas.openid.net/pape/policies/2007/06/multi-factor'
+const mfaChecking = ref(true)
+
+onMounted(() => {
+  const claims = idTokenClaims.value
+  const acrOk = claims?.acr === MFA_ACR
+  const amrOk = Array.isArray(claims?.amr) && claims.amr.some((m) => ['mfa', 'otp', 'sms', 'swk'].includes(m))
+
+  if (acrOk || amrOk) {
+    mfaChecking.value = false
+    return
+  }
+
+  loginWithRedirect({
+    authorizationParams: { acr_values: MFA_ACR },
+    appState: { target: '/profile' },
+  })
+})
+
 const refreshing = ref(false)
 
 async function refreshProfile() {
@@ -449,6 +461,12 @@ async function refreshProfile() {
 </script>
 
 <style scoped>
+.mfa-gate {
+  display: flex;
+  justify-content: center;
+  padding: 6rem 0;
+}
+
 .profile {
   display: flex;
   flex-direction: column;

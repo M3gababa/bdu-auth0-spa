@@ -25,6 +25,9 @@ app.use(
     },
     cacheLocation: 'localstorage',
     useRefreshTokens: true,
+    onRedirectCallback: (appState) => {
+      router.replace(appState?.target ?? window.location.pathname)
+    },
   })
 )
 
