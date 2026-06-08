@@ -21,6 +21,12 @@ const router = createRouter({
       beforeEnter: authGuard,
     },
     {
+      path: '/tokens',
+      name: 'tokens',
+      component: () => import('@/views/TokensView.vue'),
+      beforeEnter: authGuard,
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('@/views/AboutView.vue'),

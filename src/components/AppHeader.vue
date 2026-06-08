@@ -20,6 +20,14 @@
         >
           Profile
         </RouterLink>
+        <RouterLink
+          to="/tokens"
+          class="nav-link"
+          :class="{ active: route.name === 'tokens', 'nav-link--locked': !isAuthenticated }"
+          :title="isAuthenticated ? '' : 'Log in to view tokens'"
+        >
+          Tokens
+        </RouterLink>
         <RouterLink to="/about" class="nav-link" :class="{ active: route.name === 'about' }">
           About
         </RouterLink>
@@ -68,6 +76,14 @@
         @click="mobileOpen = false"
       >
         Profile
+      </RouterLink>
+      <RouterLink
+        v-if="isAuthenticated"
+        to="/tokens"
+        class="nav-link"
+        @click="mobileOpen = false"
+      >
+        Tokens
       </RouterLink>
       <RouterLink to="/about" class="nav-link" @click="mobileOpen = false">About</RouterLink>
       <hr class="mobile-divider" />
