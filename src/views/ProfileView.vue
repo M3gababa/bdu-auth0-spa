@@ -12,6 +12,27 @@
         <p>{{ user?.email }}</p>
         <span class="chip profile-sub-chip">{{ user?.sub }}</span>
       </div>
+      <button
+        class="banner-refresh"
+        :disabled="refreshing"
+        :aria-label="refreshing ? 'Refreshing…' : 'Refresh token'"
+        @click="refreshProfile"
+      >
+        <svg
+          class="banner-refresh-icon"
+          :class="{ spinning: refreshing }"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          width="16" height="16"
+        >
+          <path d="M23 4v6h-6" />
+          <path d="M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+        </svg>
+        {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+      </button>
     </div>
 
     <!-- ════════════════════════════════════════
@@ -29,14 +50,6 @@
           </h2>
           <p class="section-subtitle">Personal information stored in your Auth0 user profile.</p>
         </div>
-        <a
-          href="https://manage.auth0.com/#/users"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-ghost btn-sm"
-        >
-          See in Auth0 ↗
-        </a>
       </div>
 
       <div class="card">
@@ -194,14 +207,6 @@
           </h2>
           <p class="section-subtitle">Manage your privacy and communication preferences.</p>
         </div>
-        <a
-          href="https://auth0.com/docs/compliance"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-ghost btn-sm"
-        >
-          See in Auth0 ↗
-        </a>
       </div>
 
       <div class="card">
@@ -286,14 +291,6 @@
           </h2>
           <p class="section-subtitle">Enroll additional verification methods to secure your account.</p>
         </div>
-        <a
-          href="https://auth0.com/docs/secure/multi-factor-authentication"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-ghost btn-sm"
-        >
-          See in Auth0 ↗
-        </a>
       </div>
 
       <div class="mfa-list">
@@ -387,45 +384,68 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, ref, computed, nextTick } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
-const { user } = useAuth0()
+const { user, getAccessTokenSilently } = useAuth0()
 
-const AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || ''
+// Normalise to always have a trailing slash so claim keys compose cleanly
+const _aud = import.meta.env.VITE_AUTH0_AUDIENCE || ''
+const NS = _aud ? (_aud.endsWith('/') ? _aud : `${_aud}/`) : ''
 
 const userInitials = computed(() => {
   const name = user.value?.name || ''
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '?'
 })
 
-const addressClaim  = user.value?.[`${AUDIENCE}address`]  || {}
-const consentsClaim = user.value?.[`${AUDIENCE}consents`] || []
-const brandsClaim   = user.value?.[`${AUDIENCE}brands`]   || []
-
 const basicForm = reactive({
-  givenName:   user.value?.given_name   || '',
-  familyName:  user.value?.family_name  || '',
-  nickname:    user.value?.nickname     || '',
-  phoneNumber: user.value?.phone_number || '',
-  locale:      user.value?.locale       || 'en-US',
-  street:      addressClaim.street      || '',
-  zipcode:     addressClaim.zipcode     || '',
-  city:        addressClaim.city        || '',
-  country:     addressClaim.country     || '',
+  givenName: '', familyName: '', nickname: '', phoneNumber: '',
+  locale: 'en-US', street: '', zipcode: '', city: '', country: '',
 })
 
-const consents = reactive({
-  cgu:        consentsClaim.includes('cgu'),
-  gdpr:       consentsClaim.includes('gdpr'),
-  newsletter: consentsClaim.includes('newsletter'),
-})
+const consents = reactive({ cgu: false, gdpr: false, newsletter: false })
 
 const BRANDS = ['Delpha', 'Hygena', 'Mobalpa', "SoCoo'c", 'Perene']
+// Maps display label → lowercase slug used in the token's interests array
+const BRAND_SLUG = { 'Delpha': 'delpha', 'Hygena': 'hygena', 'Mobalpa': 'mobalpa', "SoCoo'c": 'socooc', 'Perene': 'perene' }
+const brands = reactive(Object.fromEntries(BRANDS.map((b) => [b, false])))
 
-const brands = reactive(
-  Object.fromEntries(BRANDS.map((b) => [b, brandsClaim.includes(b)]))
-)
+function syncFromToken() {
+  const u = user.value
+
+  basicForm.givenName   = u?.given_name                 || ''
+  basicForm.familyName  = u?.family_name                || ''
+  basicForm.nickname    = u?.nickname                   || ''
+  basicForm.phoneNumber = u?.[`${NS}phonenumber`]       || ''
+  basicForm.locale      = u?.locale                     || 'en-US'
+  basicForm.street      = u?.[`${NS}address/street`]    || ''
+  basicForm.zipcode     = u?.[`${NS}address/zipcode`]   || ''
+  basicForm.city        = u?.[`${NS}address/city`]      || ''
+  basicForm.country     = u?.[`${NS}address/country`]   || ''
+
+  const consList     = u?.[`${NS}consents`]  || []
+  consents.cgu        = consList.includes('cgu')
+  consents.gdpr       = consList.includes('gdpr')
+  consents.newsletter = consList.includes('newsletter')
+
+  const interestList = u?.[`${NS}interests`] || []
+  BRANDS.forEach((b) => { brands[b] = interestList.includes(BRAND_SLUG[b]) })
+}
+
+syncFromToken()
+
+const refreshing = ref(false)
+
+async function refreshProfile() {
+  refreshing.value = true
+  try {
+    await getAccessTokenSilently({ cacheMode: 'off' })
+    await nextTick()
+    syncFromToken()
+  } finally {
+    refreshing.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -486,6 +506,43 @@ const brands = reactive(
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.7rem;
   font-family: 'Courier New', monospace;
+}
+
+.banner-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.banner-refresh:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #ffffff;
+}
+.banner-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.banner-refresh-icon { display: block; }
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── Section header ── */

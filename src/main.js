@@ -24,6 +24,7 @@ app.use(
       }),
     },
     cacheLocation: 'localstorage',
+    useRefreshTokens: true,
   })
 )
 
