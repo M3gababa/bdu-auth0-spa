@@ -114,6 +114,54 @@
               <option value="zh-CN">中文 (简体)</option>
             </select>
           </div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="street">Street</label>
+            <input
+              id="street"
+              v-model="basicForm.street"
+              type="text"
+              class="form-input"
+              placeholder="4 Avenue des Champs-Élysées"
+              autocomplete="street-address"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="zipcode">ZIP Code</label>
+            <input
+              id="zipcode"
+              v-model="basicForm.zipcode"
+              type="text"
+              class="form-input"
+              placeholder="75008"
+              autocomplete="postal-code"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="city">City</label>
+            <input
+              id="city"
+              v-model="basicForm.city"
+              type="text"
+              class="form-input"
+              placeholder="Paris"
+              autocomplete="address-level2"
+            />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="country">Country</label>
+            <input
+              id="country"
+              v-model="basicForm.country"
+              type="text"
+              class="form-input"
+              placeholder="France"
+              autocomplete="country-name"
+            />
+          </div>
         </div>
 
         <div class="card-actions">
@@ -194,6 +242,16 @@
             <input type="checkbox" v-model="consents.newsletter" />
             <span class="toggle-slider"></span>
           </label>
+        </div>
+
+        <div class="brand-list">
+          <p class="brand-list-label">Brand subscriptions</p>
+          <div class="brand-grid">
+            <label v-for="brand in BRANDS" :key="brand" class="brand-item">
+              <input type="checkbox" v-model="brands[brand]" :disabled="!consents.newsletter" />
+              <span>{{ brand }}</span>
+            </label>
+          </div>
         </div>
 
         <div class="card-actions">
@@ -334,34 +392,40 @@ import { useAuth0 } from '@auth0/auth0-vue'
 
 const { user } = useAuth0()
 
-/** Two-letter avatar fallback from the user's full name */
+const AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || ''
+
 const userInitials = computed(() => {
   const name = user.value?.name || ''
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '?'
 })
 
-/**
- * Local reactive state for the Basic Attributes form.
- * Pre-populated from the Auth0 ID token claims.
- * Actual persistence via the Auth0 Management API is wired in separately.
- */
+const addressClaim  = user.value?.[`${AUDIENCE}address`]  || {}
+const consentsClaim = user.value?.[`${AUDIENCE}consents`] || []
+const brandsClaim   = user.value?.[`${AUDIENCE}brands`]   || []
+
 const basicForm = reactive({
-  givenName:   user.value?.given_name  || '',
-  familyName:  user.value?.family_name || '',
-  nickname:    user.value?.nickname    || '',
+  givenName:   user.value?.given_name   || '',
+  familyName:  user.value?.family_name  || '',
+  nickname:    user.value?.nickname     || '',
   phoneNumber: user.value?.phone_number || '',
-  locale:      user.value?.locale      || 'en-US',
+  locale:      user.value?.locale       || 'en-US',
+  street:      addressClaim.street      || '',
+  zipcode:     addressClaim.zipcode     || '',
+  city:        addressClaim.city        || '',
+  country:     addressClaim.country     || '',
 })
 
-/**
- * Consent toggle state.
- * Real values would be loaded from Auth0 user_metadata on mount.
- */
 const consents = reactive({
-  cgu:        false,
-  gdpr:       false,
-  newsletter: false,
+  cgu:        consentsClaim.includes('cgu'),
+  gdpr:       consentsClaim.includes('gdpr'),
+  newsletter: consentsClaim.includes('newsletter'),
 })
+
+const BRANDS = ['Delpha', 'Hygena', 'Mobalpa', "SoCoo'c", 'Perene']
+
+const brands = reactive(
+  Object.fromEntries(BRANDS.map((b) => [b, brandsClaim.includes(b)]))
+)
 </script>
 
 <style scoped>
@@ -438,6 +502,47 @@ const consents = reactive({
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 1.5rem;
+}
+
+.form-group--full {
+  grid-column: 1 / -1;
+}
+
+/* ── Brand checkboxes ── */
+.brand-list {
+  padding: 0.75rem 1.25rem 0.25rem;
+  margin: 0 -1.5rem;
+  background: var(--auth0-accentuate-4);
+  border-top: 1px solid var(--auth0-accentuate-4);
+}
+
+.brand-list-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--auth0-accentuate-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+}
+
+.brand-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.brand-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--auth0-accentuate-1);
+  cursor: pointer;
+}
+
+.brand-item input[type="checkbox"]:disabled + span {
+  opacity: 0.4;
 }
 
 /* ── MFA list ── */
