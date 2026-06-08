@@ -4,7 +4,7 @@
     <!-- ── Hero ── -->
     <section class="hero">
       <div class="hero-content">
-        <Auth0Logo :size="100" />
+        <Auth0Logo :size="150" />
         <div class="hero-text">
           <h1 class="hero-title">Auth0 SPA PKCE Demo</h1>
           <p class="hero-subtitle">
@@ -100,7 +100,7 @@ const { isAuthenticated, loginWithRedirect } = useAuth0()
 .hero-content {
   display: flex;
   align-items: center;
-  gap: 3.5rem;
+  gap: 2rem;
 }
 
 .hero-title {
