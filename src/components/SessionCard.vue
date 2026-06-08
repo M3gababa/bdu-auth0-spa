@@ -97,7 +97,6 @@ onUnmounted(() => clearInterval(clockTimer))
 
 <style scoped>
 .ua-details {
-  margin-top: 1rem;
   border-top: 1px solid var(--auth0-accentuate-4);
   padding-top: 1rem;
 }

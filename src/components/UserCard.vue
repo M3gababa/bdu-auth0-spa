@@ -135,7 +135,7 @@ const userInitials = computed(() => {
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.75rem !important;
   word-break: break-all;
-  max-width: 200px;
+  max-width: 225px;
 }
 
 /* Anonymous state */
