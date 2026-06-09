@@ -377,7 +377,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, nextTick, watch } from 'vue'
+import { reactive, ref, computed, nextTick, watchEffect } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
 const { user, getAccessTokenSilently, loginWithRedirect, idTokenClaims } = useAuth0()
@@ -425,7 +425,7 @@ function syncFromToken() {
   BRANDS.forEach((b) => { brands[b] = interestList.includes(BRAND_SLUG[b]) })
 }
 
-watch(user, syncFromToken, { immediate: true })
+watchEffect(syncFromToken)
 
 const refreshing = ref(false)
 
