@@ -184,7 +184,7 @@
           <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
             Update Profile
           </button>
-          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'profileMgmt' } })">
+          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'profileMgmt' }, appState: { returnTo: '/profile' } })">
             Edit in Auth0 ↗
           </button>
         </div>
@@ -261,7 +261,7 @@
           <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
             Update Consents
           </button>
-          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'pref_center' } })">
+          <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'pref_center' }, appState: { returnTo: '/profile' } })">
             Edit in Auth0 ↗
           </button>
         </div>
@@ -426,25 +426,6 @@ function syncFromToken() {
 }
 
 syncFromToken()
-
-const MFA_ACR = 'http://schemas.openid.net/pape/policies/2007/06/multi-factor'
-const mfaChecking = ref(true)
-
-onMounted(() => {
-  const claims = idTokenClaims.value
-  const acrOk = claims?.acr === MFA_ACR
-  const amrOk = Array.isArray(claims?.amr) && claims.amr.some((m) => ['mfa', 'otp', 'sms', 'swk'].includes(m))
-
-  if (acrOk || amrOk) {
-    mfaChecking.value = false
-    return
-  }
-
-  loginWithRedirect({
-    authorizationParams: { acr_values: MFA_ACR },
-    appState: { target: '/profile' },
-  })
-})
 
 const refreshing = ref(false)
 
