@@ -50,11 +50,15 @@ The namespace prefix (`NS`) is derived from `VITE_AUTH0_AUDIENCE` at build time.
 
 `ProfileView.vue` is **not** a static form anymore — it's reactive against the ID token:
 
-- `syncFromToken()` maps `user.value` (including the namespaced custom claims above) into local `basicForm`, `consents`, and `brands` reactive state. It runs inside a `watchEffect`, so it re-syncs automatically whenever the SDK's `user` ref changes.
+- `syncFromToken()` maps `user.value` (including the namespaced custom claims above) into local `basicForm`, `consents`, and `sports` reactive state. It runs inside a `watchEffect`, so it re-syncs automatically whenever the SDK's `user` ref changes.
 - The **Refresh** button (`refreshProfile()`) calls `getAccessTokenSilently({ cacheMode: 'off' })` to force a token re-issue (bypassing the cache) then re-runs `syncFromToken()`. Use this after changing user_metadata elsewhere (e.g. in the Auth0 dashboard or a self-service screen) to pull the update into the UI without a full logout/login.
 - **Update buttons remain intentionally `disabled`** — writes are still UX-only. Nothing in this app calls the Management API. The three "Edit in Auth0 ↗" buttons call `loginWithRedirect()` with a distinct `authorizationParams.custom_param` (`profileMgmt`, `pref_center`) — a tenant-side Auth0 Action reads this param on a fresh login and redirects the user into the corresponding self-service management screen. That routing logic also lives outside this repo.
 
 **Known issue:** the template has `v-if="mfaChecking"` (top of `ProfileView.vue`) but `mfaChecking` is never declared in `<script setup>` — it's always `undefined`/falsy, so the loading-gate branch is permanently dead code. This is known leftover from the MFA-protection work and intentionally left as-is; don't "fix" it as a side effect of unrelated changes without flagging it.
+
+### Advanced page (`/advanced`)
+
+`AdvancedView.vue` is a placeholder — currently just renders a "Work in progress" notice. Public route (no `authGuard`), matching `/` and `/about`. Linked from `AppHeader.vue` nav (desktop + mobile drawer).
 
 ### Tokens page (`/tokens`)
 
@@ -83,6 +87,7 @@ Routes (`src/router/index.js`):
 | `/profile` | `ProfileView` (lazy) | `authGuard` |
 | `/tokens` | `TokensView` (lazy) | `authGuard` |
 | `/about` | `AboutView` (lazy) | None (public) |
+| `/advanced` | `AdvancedView` (lazy) | None (public) |
 
 ### Next implementation step (unchanged from original plan)
 

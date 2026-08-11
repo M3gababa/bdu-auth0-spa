@@ -31,6 +31,11 @@ const router = createRouter({
       name: 'about',
       component: () => import('@/views/AboutView.vue'),
     },
+    {
+      path: '/advanced',
+      name: 'advanced',
+      component: () => import('@/views/AdvancedView.vue'),
+    },
   ],
 })
 

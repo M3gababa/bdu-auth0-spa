@@ -28,6 +28,9 @@
         >
           Tokens
         </RouterLink>
+        <RouterLink to="/advanced" class="nav-link" :class="{ active: route.name === 'advanced' }">
+          Advanced
+        </RouterLink>
         <RouterLink to="/about" class="nav-link" :class="{ active: route.name === 'about' }">
           About
         </RouterLink>
@@ -85,6 +88,7 @@
       >
         Tokens
       </RouterLink>
+      <RouterLink to="/advanced" class="nav-link" @click="mobileOpen = false">Advanced</RouterLink>
       <RouterLink to="/about" class="nav-link" @click="mobileOpen = false">About</RouterLink>
       <hr class="mobile-divider" />
       <button v-if="isAuthenticated" class="btn btn-sm header-btn-logout" @click="handleLogout">
