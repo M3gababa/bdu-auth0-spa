@@ -247,12 +247,12 @@
           </label>
         </div>
 
-        <div class="brand-list">
-          <p class="brand-list-label">Brand subscriptions</p>
-          <div class="brand-grid">
-            <label v-for="brand in BRANDS" :key="brand" class="brand-item">
-              <input type="checkbox" v-model="brands[brand]" :disabled="!consents.newsletter" />
-              <span>{{ brand }}</span>
+        <div class="sport-list">
+          <p class="sport-list-label">Sports</p>
+          <div class="sport-grid">
+            <label v-for="sport in SPORTS" :key="sport" class="sport-item">
+              <input type="checkbox" v-model="sports[sport]" />
+              <span>{{ sport }}</span>
             </label>
           </div>
         </div>
@@ -398,10 +398,8 @@ const basicForm = reactive({
 
 const consents = reactive({ cgu: false, gdpr: false, newsletter: false })
 
-const BRANDS = ['Delpha', 'Hygena', 'Mobalpa', "SoCoo'c", 'Perene']
-// Maps display label → lowercase slug used in the token's interests array
-const BRAND_SLUG = { 'Delpha': 'delpha', 'Hygena': 'hygena', 'Mobalpa': 'mobalpa', "SoCoo'c": 'socooc', 'Perene': 'perene' }
-const brands = reactive(Object.fromEntries(BRANDS.map((b) => [b, false])))
+const SPORTS = ['football', 'handball', 'judo', 'esports', 'running', 'cycling', 'swimming']
+const sports = reactive(Object.fromEntries(SPORTS.map((s) => [s, false])))
 
 function syncFromToken() {
   const u = user.value
@@ -416,13 +414,12 @@ function syncFromToken() {
   basicForm.city        = u?.[`${NS}address/city`]      || ''
   basicForm.country     = u?.[`${NS}address/country`]   || ''
 
-  const consList     = u?.[`${NS}consents`]  || []
-  consents.cgu        = consList.includes('cgu')
-  consents.gdpr       = consList.includes('gdpr')
-  consents.newsletter = consList.includes('newsletter')
+  consents.cgu        = u?.[`${NS}consents/cgu`]        ?? false
+  consents.gdpr       = u?.[`${NS}consents/gdpr`]       ?? false
+  consents.newsletter = u?.[`${NS}consents/newsletter`] ?? false
 
-  const interestList = u?.[`${NS}interests`] || []
-  BRANDS.forEach((b) => { brands[b] = interestList.includes(BRAND_SLUG[b]) })
+  const hobbyList = u?.[`${NS}hobbies`] || []
+  SPORTS.forEach((s) => { sports[s] = hobbyList.includes(s) })
 }
 
 watchEffect(syncFromToken)
@@ -564,15 +561,15 @@ async function refreshProfile() {
   grid-column: 1 / -1;
 }
 
-/* ── Brand checkboxes ── */
-.brand-list {
+/* ── Sport checkboxes ── */
+.sport-list {
   padding: 0.75rem 1.25rem 0.25rem;
   margin: 0 -1.5rem;
   background: var(--auth0-accentuate-4);
   border-top: 1px solid var(--auth0-accentuate-4);
 }
 
-.brand-list-label {
+.sport-list-label {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--auth0-accentuate-2);
@@ -581,24 +578,20 @@ async function refreshProfile() {
   margin-bottom: 0.6rem;
 }
 
-.brand-grid {
+.sport-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.25rem;
   padding-bottom: 0.5rem;
 }
 
-.brand-item {
+.sport-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.875rem;
   color: var(--auth0-accentuate-1);
   cursor: pointer;
-}
-
-.brand-item input[type="checkbox"]:disabled + span {
-  opacity: 0.4;
 }
 
 /* ── MFA list ── */
