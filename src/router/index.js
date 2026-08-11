@@ -35,6 +35,7 @@ const router = createRouter({
       path: '/advanced',
       name: 'advanced',
       component: () => import('@/views/AdvancedView.vue'),
+      beforeEnter: authGuard,
     },
   ],
 })

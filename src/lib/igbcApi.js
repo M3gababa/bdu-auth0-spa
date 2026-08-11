@@ -27,3 +27,8 @@ export function updateProfile(token, data) {
 export function updateConsents(token, data) {
   return request('/api/profile/consents', { method: 'PUT', token, body: data })
 }
+
+// Custom Token Exchange (RFC 8693) — dev-only endpoint as of 2026-08-11
+export function exchangeToken(token, audience) {
+  return request('/api/security/cte', { method: 'POST', token, body: { audience } })
+}

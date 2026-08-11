@@ -63,11 +63,20 @@ The namespace prefix (`NS`) is derived from `VITE_AUTH0_AUDIENCE` at build time.
 
 ### IGBC API client (`src/lib/igbcApi.js`)
 
-Thin `fetch` wrapper around `api.igbc.sheev.fr` (base URL from `VITE_IGBC_API_BASE_URL`). Callers pass an access token explicitly (obtained via `getAccessTokenSilently()` in the calling component) rather than the module reaching into `useAuth0()` itself, keeping it decoupled from Vue. A 400 response body is `{ error: string }` — the client throws `Error(payload.error)`. Note the API returns **400, not 401, for a missing/invalid bearer token** (that's `@auth0/auth0-fastify-api`'s doing, not a bug here). Currently exports `updateProfile()` and `updateConsents()`; the same audience already configured via `VITE_AUTH0_AUDIENCE` (`api://sheev/v1`) authorizes these calls — no separate token/audience needed.
+Thin `fetch` wrapper around `api.igbc.sheev.fr` (base URL from `VITE_IGBC_API_BASE_URL` — same var for prod and local dev; switching it between `https://api.igbc.sheev.fr` and `http://localhost:4000` is a deployment/local-env concern, not something the code branches on). Callers pass an access token explicitly (obtained via `getAccessTokenSilently()` in the calling component) rather than the module reaching into `useAuth0()` itself, keeping it decoupled from Vue. A 400 response body is `{ error: string }` — the client throws `Error(payload.error)`. Note the API returns **400, not 401, for a missing/invalid bearer token** (that's `@auth0/auth0-fastify-api`'s doing, not a bug here). Exports `updateProfile()`, `updateConsents()`, `exchangeToken()`; the same audience already configured via `VITE_AUTH0_AUDIENCE` (`api://sheev/v1`) authorizes all of these calls — no separate token/audience needed.
+
+CORS note: the API had no CORS support at all as of 2026-08-10/11 (`OPTIONS` routes 404 on both prod and local). If a fetch call here fails with a browser CORS error, that's a server-side gap on the API, not a bug in this client — see `api.igbc.sheev.fr/docs` or ask whoever owns that API before changing this code.
 
 ### Advanced page (`/advanced`)
 
-`AdvancedView.vue` is a placeholder — currently just renders a "Work in progress" notice. Public route (no `authGuard`), matching `/` and `/about`. Linked from `AppHeader.vue` nav (desktop + mobile drawer).
+Protected by `authGuard` (added when the CTE section was built — the tools here need the caller's own token). Currently has one section:
+
+- **Custom Token Exchange (CTE)** — calls `exchangeToken()` → `POST /api/security/cte` (RFC 8693 token-exchange grant) with the current session's access token as the bearer being exchanged and `{ audience }` as the body. The requested audience is validated server-side against an allowlist, never trusted from the client alone.
+  - Field order is **Token Name → Expiration → Description** (first row/group), then **Audience + Permissions/Scopes side by side** (second row/group) — this ordering is a deliberate UX choice, not incidental; don't silently reorder it.
+  - **Audience** is a `<select>` with two hardcoded options: `api://sheev-public/v1` and `mcp://sheev/v1` (`AUDIENCES` array in `AdvancedView.vue`) — the only field that actually drives the request.
+  - **Token Name**, **Description**, **Expiration**, and the **Permissions/Scopes** checkboxes (shown per-audience via `AUDIENCES[].scopes`) are all **enabled inputs bound to local refs/reactive state, but none of them are sent to the API** — each carries a `title="Not used yet"` tooltip. Don't wire them into `handleExchange()`'s request body without confirming the API accepts them first.
+  - **Expiration** options are computed (`expirationOptions`, via `formatExpiryDate()`) to show the actual resulting date next to each duration, e.g. "30 days (Sep 10, 2026)" — computed relative to `new Date()` at render time, not reactive to the passage of time (fine for a dropdown label).
+  - Button reads "Generate Token" / "Generating…". On success, shows `token_type`/`expires_in`/`scope`, the raw `access_token` (copy button), and the `decoded` payload the API already returns pre-decoded (no client-side JWT parsing needed here, unlike `TokensView.vue`).
 
 ### Tokens page (`/tokens`)
 
@@ -96,7 +105,7 @@ Routes (`src/router/index.js`):
 | `/profile` | `ProfileView` (lazy) | `authGuard` |
 | `/tokens` | `TokensView` (lazy) | `authGuard` |
 | `/about` | `AboutView` (lazy) | None (public) |
-| `/advanced` | `AdvancedView` (lazy) | None (public) |
+| `/advanced` | `AdvancedView` (lazy) | `authGuard` |
 
 ### Remaining scope (not wired up yet)
 

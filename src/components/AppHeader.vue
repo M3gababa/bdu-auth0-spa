@@ -28,7 +28,12 @@
         >
           Tokens
         </RouterLink>
-        <RouterLink to="/advanced" class="nav-link" :class="{ active: route.name === 'advanced' }">
+        <RouterLink
+          to="/advanced"
+          class="nav-link"
+          :class="{ active: route.name === 'advanced', 'nav-link--locked': !isAuthenticated }"
+          :title="isAuthenticated ? '' : 'Log in to access advanced tools'"
+        >
           Advanced
         </RouterLink>
         <RouterLink to="/about" class="nav-link" :class="{ active: route.name === 'about' }">
@@ -88,7 +93,14 @@
       >
         Tokens
       </RouterLink>
-      <RouterLink to="/advanced" class="nav-link" @click="mobileOpen = false">Advanced</RouterLink>
+      <RouterLink
+        v-if="isAuthenticated"
+        to="/advanced"
+        class="nav-link"
+        @click="mobileOpen = false"
+      >
+        Advanced
+      </RouterLink>
       <RouterLink to="/about" class="nav-link" @click="mobileOpen = false">About</RouterLink>
       <hr class="mobile-divider" />
       <button v-if="isAuthenticated" class="btn btn-sm header-btn-logout" @click="handleLogout">
