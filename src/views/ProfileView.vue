@@ -180,13 +180,25 @@
           </div>
         </div>
 
+        <div class="sport-list">
+          <p class="sport-list-label">Sports</p>
+          <div class="sport-grid">
+            <label v-for="sport in SPORTS" :key="sport" class="sport-item">
+              <input type="checkbox" v-model="sports[sport]" />
+              <span>{{ sport }}</span>
+            </label>
+          </div>
+        </div>
+
         <div class="card-actions">
-          <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
-            Update Profile
+          <button class="btn btn-primary btn-sm" :disabled="savingProfile" @click="handleUpdateProfile">
+            {{ savingProfile ? 'Saving…' : 'Update Profile' }}
           </button>
           <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'profileMgmt' }, appState: { returnTo: '/profile' } })">
             Edit in Auth0 ↗
           </button>
+          <span v-if="profileSaved" class="save-feedback">Saved</span>
+          <span v-if="profileError" class="save-feedback save-feedback--error">{{ profileError }}</span>
         </div>
       </div>
     </section>
@@ -247,23 +259,15 @@
           </label>
         </div>
 
-        <div class="sport-list">
-          <p class="sport-list-label">Sports</p>
-          <div class="sport-grid">
-            <label v-for="sport in SPORTS" :key="sport" class="sport-item">
-              <input type="checkbox" v-model="sports[sport]" />
-              <span>{{ sport }}</span>
-            </label>
-          </div>
-        </div>
-
         <div class="card-actions">
-          <button class="btn btn-primary btn-sm" disabled title="API integration coming soon">
-            Update Consents
+          <button class="btn btn-primary btn-sm" :disabled="savingConsents" @click="handleUpdateConsents">
+            {{ savingConsents ? 'Saving…' : 'Update Consents' }}
           </button>
           <button class="btn btn-ghost btn-sm" @click="loginWithRedirect({ authorizationParams: { custom_param: 'pref_center' }, appState: { returnTo: '/profile' } })">
             Edit in Auth0 ↗
           </button>
+          <span v-if="consentsSaved" class="save-feedback">Saved</span>
+          <span v-if="consentsError" class="save-feedback save-feedback--error">{{ consentsError }}</span>
         </div>
       </div>
     </section>
@@ -379,6 +383,7 @@
 <script setup>
 import { reactive, ref, computed, nextTick, watchEffect } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import { updateProfile, updateConsents } from '@/lib/igbcApi'
 
 const { user, getAccessTokenSilently, loginWithRedirect, idTokenClaims } = useAuth0()
 
@@ -400,6 +405,7 @@ const consents = reactive({ cgu: false, gdpr: false, newsletter: false })
 
 const SPORTS = ['football', 'handball', 'judo', 'esports', 'running', 'cycling', 'swimming']
 const sports = reactive(Object.fromEntries(SPORTS.map((s) => [s, false])))
+const planet = ref('Earth')
 
 function syncFromToken() {
   const u = user.value
@@ -413,6 +419,7 @@ function syncFromToken() {
   basicForm.zipcode     = u?.[`${NS}address/zipcode`]   || ''
   basicForm.city        = u?.[`${NS}address/city`]      || ''
   basicForm.country     = u?.[`${NS}address/country`]   || ''
+  planet.value           = u?.[`${NS}address/planet`]    || 'Earth'
 
   consents.cgu        = u?.[`${NS}consents/cgu`]        ?? false
   consents.gdpr       = u?.[`${NS}consents/gdpr`]       ?? false
@@ -426,14 +433,74 @@ watchEffect(syncFromToken)
 
 const refreshing = ref(false)
 
+/** Force a fresh ID token (bypassing cache) and re-sync local state from its claims */
+async function pullLatestFromToken() {
+  await getAccessTokenSilently({ cacheMode: 'off' })
+  await nextTick()
+  syncFromToken()
+}
+
 async function refreshProfile() {
   refreshing.value = true
   try {
-    await getAccessTokenSilently({ cacheMode: 'off' })
-    await nextTick()
-    syncFromToken()
+    await pullLatestFromToken()
   } finally {
     refreshing.value = false
+  }
+}
+
+const savingProfile = ref(false)
+const profileError = ref('')
+const profileSaved = ref(false)
+
+async function handleUpdateProfile() {
+  savingProfile.value = true
+  profileError.value = ''
+  profileSaved.value = false
+  try {
+    const token = await getAccessTokenSilently()
+    await updateProfile(token, {
+      given_name: basicForm.givenName,
+      family_name: basicForm.familyName,
+      nickname: basicForm.nickname,
+      phonenumber: basicForm.phoneNumber,
+      address: {
+        street: basicForm.street,
+        city: basicForm.city,
+        zipcode: basicForm.zipcode,
+        country: basicForm.country,
+        planet: planet.value,
+      },
+      hobbies: { ...sports },
+    })
+    await pullLatestFromToken()
+    profileSaved.value = true
+    setTimeout(() => { profileSaved.value = false }, 2000)
+  } catch (e) {
+    profileError.value = e?.message ?? 'Failed to update profile.'
+  } finally {
+    savingProfile.value = false
+  }
+}
+
+const savingConsents = ref(false)
+const consentsError = ref('')
+const consentsSaved = ref(false)
+
+async function handleUpdateConsents() {
+  savingConsents.value = true
+  consentsError.value = ''
+  consentsSaved.value = false
+  try {
+    const token = await getAccessTokenSilently()
+    await updateConsents(token, { ...consents })
+    await pullLatestFromToken()
+    consentsSaved.value = true
+    setTimeout(() => { consentsSaved.value = false }, 2000)
+  } catch (e) {
+    consentsError.value = e?.message ?? 'Failed to update consents.'
+  } finally {
+    savingConsents.value = false
   }
 }
 </script>
@@ -559,6 +626,17 @@ async function refreshProfile() {
 
 .form-group--full {
   grid-column: 1 / -1;
+}
+
+/* ── Save feedback ── */
+.save-feedback {
+  align-self: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--auth0-accentuate-2);
+}
+.save-feedback--error {
+  color: #b91c1c;
 }
 
 /* ── Sport checkboxes ── */

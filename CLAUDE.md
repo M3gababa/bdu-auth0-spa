@@ -46,15 +46,24 @@ A post-login Auth0 Action injects **namespaced custom claims** into the ID token
 
 The namespace prefix (`NS`) is derived from `VITE_AUTH0_AUDIENCE` at build time. This is **intentional, not incidental**: the Action reads the requesting app's audience and namespaces the claims under it (`audience/attribute`), which lets the *same* Action serve different apps with different claim sets depending on which API they're authorizing against. `VITE_AUTH0_AUDIENCE` doing double duty (protecting the API *and* keying the claims namespace) is the design, not a collision to resolve. If `VITE_AUTH0_AUDIENCE` is unset, `NS` is `''` and none of these claims resolve. This Action lives in the Auth0 tenant dashboard, not in this codebase — if claims aren't showing up, check the tenant's Actions first, not this code.
 
-### Profile page: read-from-token, write-is-UX-only
+### Profile page: read-from-token, write-via-IGBC-API
 
-`ProfileView.vue` is **not** a static form anymore — it's reactive against the ID token:
+`ProfileView.vue` is reactive against the ID token for reads, and writes through a separate resource server (the IGBC API, `api.igbc.sheev.fr`) for the Basic Attributes and Consent Management sections:
 
-- `syncFromToken()` maps `user.value` (including the namespaced custom claims above) into local `basicForm`, `consents`, and `sports` reactive state. It runs inside a `watchEffect`, so it re-syncs automatically whenever the SDK's `user` ref changes.
-- The **Refresh** button (`refreshProfile()`) calls `getAccessTokenSilently({ cacheMode: 'off' })` to force a token re-issue (bypassing the cache) then re-runs `syncFromToken()`. Use this after changing user_metadata elsewhere (e.g. in the Auth0 dashboard or a self-service screen) to pull the update into the UI without a full logout/login.
-- **Update buttons remain intentionally `disabled`** — writes are still UX-only. Nothing in this app calls the Management API. The three "Edit in Auth0 ↗" buttons call `loginWithRedirect()` with a distinct `authorizationParams.custom_param` (`profileMgmt`, `pref_center`) — a tenant-side Auth0 Action reads this param on a fresh login and redirects the user into the corresponding self-service management screen. That routing logic also lives outside this repo.
+- `syncFromToken()` maps `user.value` (including the namespaced custom claims above) into local `basicForm`, `consents`, `sports`, and `planet` reactive state. It runs inside a `watchEffect`, so it re-syncs automatically whenever the SDK's `user` ref changes.
+- The **Refresh** button (`refreshProfile()`) and the internal `pullLatestFromToken()` helper call `getAccessTokenSilently({ cacheMode: 'off' })` to force a token re-issue (bypassing the cache) then re-run `syncFromToken()`. Use this after changing user_metadata elsewhere (e.g. via the API, the Auth0 dashboard, or a self-service screen) to pull the update into the UI without a full logout/login.
+- **Sports lives in the Basic Attributes card**, not Consent Management — the IGBC API writes `hobbies` via the same `PUT /api/profile` call as names/address/phone, so the UI groups them the same way.
+- **"Update Profile"** (`handleUpdateProfile()`) calls `updateProfile()` from `src/lib/igbcApi.js` with `given_name`/`family_name`/`nickname`/`phonenumber`/`address` (including `planet`, read from `${NS}address/planet` or defaulted to `'Earth'` — no dedicated UI field)/`hobbies` (the full `sports` object — the API replaces it wholesale, so partial updates would silently wipe omitted sports). On success it calls `pullLatestFromToken()` to reflect the save immediately.
+- **"Update Consents"** (`handleUpdateConsents()`) calls `updateConsents()` with `{ cgu, gdpr, newsletter }` — this is a partial/merge update server-side, unlike the profile endpoint.
+- Both buttons show inline "Saved" / error feedback (`.save-feedback` in `ProfileView.vue`) and disable themselves while in flight.
+- The "Edit in Auth0 ↗" buttons (passing `authorizationParams.custom_param`: `profileMgmt` / `pref_center`) are **kept intentionally alongside** the native save buttons as an alternative path — not removed, per explicit decision.
+- MFA and account deletion remain UX-only/disabled for now — the IGBC API has endpoints for both (`/api/security/mfa*`, `DELETE /api/profile`) but they're out of scope until asked for. Note if that work starts: the API's MFA factor enum (`email`, `sms`, `security_key`, `guardian_push`) doesn't include a TOTP/authenticator-app factor, which the current MFA cards assume — that mismatch needs resolving first.
 
 **Known issue:** the template has `v-if="mfaChecking"` (top of `ProfileView.vue`) but `mfaChecking` is never declared in `<script setup>` — it's always `undefined`/falsy, so the loading-gate branch is permanently dead code. This is known leftover from the MFA-protection work and intentionally left as-is; don't "fix" it as a side effect of unrelated changes without flagging it.
+
+### IGBC API client (`src/lib/igbcApi.js`)
+
+Thin `fetch` wrapper around `api.igbc.sheev.fr` (base URL from `VITE_IGBC_API_BASE_URL`). Callers pass an access token explicitly (obtained via `getAccessTokenSilently()` in the calling component) rather than the module reaching into `useAuth0()` itself, keeping it decoupled from Vue. A 400 response body is `{ error: string }` — the client throws `Error(payload.error)`. Note the API returns **400, not 401, for a missing/invalid bearer token** (that's `@auth0/auth0-fastify-api`'s doing, not a bug here). Currently exports `updateProfile()` and `updateConsents()`; the same audience already configured via `VITE_AUTH0_AUDIENCE` (`api://sheev/v1`) authorizes these calls — no separate token/audience needed.
 
 ### Advanced page (`/advanced`)
 
@@ -89,13 +98,10 @@ Routes (`src/router/index.js`):
 | `/about` | `AboutView` (lazy) | None (public) |
 | `/advanced` | `AdvancedView` (lazy) | None (public) |
 
-### Next implementation step (unchanged from original plan)
+### Remaining scope (not wired up yet)
 
-Wiring the disabled Update buttons to the Auth0 Management API:
-
-1. The Management API (`https://{domain}/api/v2/`) is a *different* audience than the app's own protected API (the one `VITE_AUTH0_AUDIENCE` already points to for the custom-claims namespace — that's by design, see above, and doesn't change). Getting a Management-API-scoped token means requesting a *second* token with that audience explicitly, e.g. `getAccessTokenSilently({ authorizationParams: { audience: 'https://{domain}/api/v2/' } })` — not reusing the existing `VITE_AUTH0_AUDIENCE` token.
-2. `PATCH https://{domain}/api/v2/users/{sub}` requests using that second token.
-3. A Pinia store would become warranted once profile state needs cross-component reuse — not needed yet.
+- MFA enrollment/removal and account deletion (GDPR erasure) — the IGBC API supports both, deliberately left disabled/UX-only until asked for. See the factor-enum mismatch note above before starting MFA.
+- A Pinia store would become warranted once profile state needs cross-component reuse — not needed yet, since only `ProfileView.vue` reads/writes this state today.
 
 ## Environment variables
 
@@ -103,7 +109,8 @@ Wiring the disabled Update buttons to the Auth0 Management API:
 |---|---|---|
 | `VITE_AUTH0_DOMAIN` | Yes | Auth0 tenant domain |
 | `VITE_AUTH0_CLIENT_ID` | Yes | SPA application client ID |
-| `VITE_AUTH0_AUDIENCE` | No | API identifier for this app's protected API — enables JWT access tokens **and**, by design, keys the namespace a tenant-side Action uses to inject custom claims into the ID token (`ProfileView.vue` reads these) |
+| `VITE_AUTH0_AUDIENCE` | No | API identifier for this app's protected API (`api://sheev/v1`) — enables JWT access tokens **and**, by design, keys the namespace a tenant-side Action uses to inject custom claims into the ID token (`ProfileView.vue` reads these). Also the audience the IGBC API itself authorizes against — no separate token needed for `src/lib/igbcApi.js` calls. |
+| `VITE_IGBC_API_BASE_URL` | No (required for profile/consent saves to work) | Base URL of the IGBC resource server (`https://api.igbc.sheev.fr`) that `src/lib/igbcApi.js` calls |
 
 All variables are build-time (`VITE_` prefix). They must also be added in the Vercel project dashboard for production builds. Auth0 Dashboard must list the app URL under **Allowed Callback URLs**, **Logout URLs**, and **Web Origins**.
 
