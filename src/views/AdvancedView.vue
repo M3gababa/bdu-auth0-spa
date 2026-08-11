@@ -69,7 +69,7 @@
 
         <div class="form-grid form-grid--spaced">
           <div class="form-group">
-            <label class="form-label" for="cte-audience">Audience</label>
+            <label class="form-label" for="cte-audience">Target Audience</label>
             <select id="cte-audience" v-model="audience" class="form-input">
               <option v-for="opt in AUDIENCES" :key="opt.value" :value="opt.value">{{ opt.value }}</option>
             </select>
