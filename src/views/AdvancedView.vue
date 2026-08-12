@@ -12,9 +12,54 @@
     </div>
 
     <!-- ════════════════════════════════════════
+         Feature selector
+    ═════════════════════════════════════════ -->
+    <div class="feature-grid">
+      <button
+        class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'cte' }"
+        @click="selectFeature('cte')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 2l4 4-4 4" />
+          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+          <path d="M7 22l-4-4 4-4" />
+          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+        </svg>
+        <span class="feature-btn-name">Custom Token Exchange</span>
+      </button>
+
+      <button
+        class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'oauth2' }"
+        @click="selectFeature('oauth2')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <path d="M15 3h6v6" />
+          <path d="M10 14L21 3" />
+        </svg>
+        <span class="feature-btn-name">External OAuth2.0 Token</span>
+      </button>
+
+      <button
+        class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'tbd' }"
+        @click="selectFeature('tbd')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
+        </svg>
+        <span class="feature-btn-name">TBD</span>
+      </button>
+    </div>
+
+    <!-- ════════════════════════════════════════
          Custom Token Exchange
     ═════════════════════════════════════════ -->
-    <section class="section">
+    <section v-if="activeFeature === 'cte'" class="section">
       <div class="section-header">
         <div>
           <h2 class="section-title">
@@ -31,6 +76,7 @@
             Calls <code>POST /api/security/cte</code>.
           </p>
         </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
       </div>
 
       <div class="card">
@@ -126,6 +172,56 @@
         </div>
       </div>
     </section>
+
+    <!-- ════════════════════════════════════════
+         External OAuth2.0 Token
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'oauth2'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <path d="M15 3h6v6" />
+              <path d="M10 14L21 3" />
+            </svg>
+            External OAuth2.0 Token
+          </h2>
+          <p class="section-subtitle">
+            Request an access token from an external OAuth 2.0 / OIDC provider.
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <p class="wip-placeholder">Work in Progress</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TBD
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'tbd'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4" />
+              <path d="M12 16h.01" />
+            </svg>
+            TBD
+          </h2>
+          <p class="section-subtitle">Reserved for a future feature.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <p class="wip-placeholder">Work in Progress</p>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -135,6 +231,11 @@ import { useAuth0 } from '@auth0/auth0-vue'
 import { exchangeToken } from '@/lib/igbcApi'
 
 const { getAccessTokenSilently } = useAuth0()
+
+const activeFeature = ref(null)
+function selectFeature(key) {
+  activeFeature.value = activeFeature.value === key ? null : key
+}
 
 const AUDIENCES = [
   {
@@ -223,6 +324,74 @@ function fmtJson(value) {
 .page-subtitle {
   font-size: 0.9rem;
   color: #666;
+}
+
+/* ── Feature selector ── */
+.feature-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.feature-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  border: 2px solid var(--auth0-accentuate-4);
+  background: #ffffff;
+  color: var(--auth0-accentuate-1);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.feature-btn:hover {
+  border-color: var(--auth0-txt-background-3);
+  background-color: var(--auth0-accentuate-4);
+}
+
+.feature-btn-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.feature-btn-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.feature-btn--active {
+  background-color: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+.feature-btn--active:hover {
+  background-color: #047857;
+  border-color: #047857;
+}
+
+/* ── Section header ── */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.wip-placeholder {
+  text-align: center;
+  padding: 1.5rem 0;
+  font-weight: 600;
+  color: var(--auth0-accentuate-2);
 }
 
 .form-grid {
