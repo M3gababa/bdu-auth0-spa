@@ -1,5 +1,5 @@
 {
-  "client_id": "http://bdu-spa.sheev.fr/oauth-client-metadata.json",
+  "client_id": "https://bdu-spa.sheev.fr/oauth-client-metadata.json",
   "client_name": "SPA - 3rd Party Client",
   "application_type": "web",
   "description": "Application used to request a token from any OIDC-compliant authorization server.",
