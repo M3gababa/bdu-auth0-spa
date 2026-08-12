@@ -397,15 +397,15 @@ const oauthForm = reactive({
   issuer: '',
   clientId: '',
   audience: '',
-  scope: 'openid profile email offline_access',
+  scope: '',
   redirectUri: `${window.location.origin}/oidc-callback`,
 })
 
 function loadPreset() {
   oauthForm.issuer = 'https://partners.sheev.fr'
-  oauthForm.clientId = 'tpc_2JQ2Sq26bj6DYyCB6KV7e1'
+  oauthForm.clientId = 'https://bdu-spa.sheev.fr/oauth-client-metadata.json'
   oauthForm.audience = 'api://sheev-public/v1'
-  oauthForm.scope = 'openid profile email offline_access'
+  oauthForm.scope = 'openid profile email offline_access get:all'
 }
 
 const generatingOAuthToken = ref(false)
