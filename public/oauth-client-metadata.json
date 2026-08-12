@@ -1,0 +1,15 @@
+{
+  "client_id": "http://bdu-spa.sheev.fr/oauth-client-metadata.json",
+  "client_name": "SPA - 3rd Party Client",
+  "application_type": "web",
+  "description": "Application used to request a token from any OIDC-compliant authorization server.",
+  "logo_uri": "https://img.icons8.com/?size=100&id=vlHrsxLUPnRe&format=png&color=000000",
+  "redirect_uris": [
+    "http://localhost:5173/oidc-callback",
+    "https://bdu-auth0-spa.vercel.app/oidc-callback",
+    "https://bdu-spa.sheev.fr/oidc-callback"
+  ],
+  "token_endpoint_auth_method": "none",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"]
+}
