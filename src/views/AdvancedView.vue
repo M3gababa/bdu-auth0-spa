@@ -195,7 +195,99 @@
       </div>
 
       <div class="card">
-        <p class="wip-placeholder">Work in Progress</p>
+        <div class="form-grid">
+          <div class="form-group form-group--full">
+            <label class="form-label" for="oauth2-issuer">Issuer / Authority URL</label>
+            <input
+              id="oauth2-issuer"
+              v-model="oauthForm.issuer"
+              type="text"
+              class="form-input"
+              placeholder="https://your-idp.example.com"
+            />
+            <span class="form-hint">Used to discover endpoints via /.well-known/openid-configuration.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="oauth2-client-id">Client ID</label>
+            <input id="oauth2-client-id" v-model="oauthForm.clientId" type="text" class="form-input" placeholder="e.g. abc123" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="oauth2-audience">Audience</label>
+            <input id="oauth2-audience" v-model="oauthForm.audience" type="text" class="form-input" placeholder="e.g. api://my-api" />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="oauth2-scope">Scopes</label>
+            <input id="oauth2-scope" v-model="oauthForm.scope" type="text" class="form-input" placeholder="openid profile email offline_access" />
+            <span class="form-hint">Space-separated. Include <code>offline_access</code> to request a refresh token.</span>
+          </div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="oauth2-redirect-uri">Redirect URI</label>
+            <input id="oauth2-redirect-uri" v-model="oauthForm.redirectUri" type="text" class="form-input" />
+            <span class="form-hint">Must be registered as an allowed callback URL with the provider.</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary btn-sm" @click="loadPreset">Load Preset Values</button>
+          <button class="btn btn-primary btn-sm" :disabled="generatingOAuthToken" @click="handleGenerateOAuthToken">
+            {{ generatingOAuthToken ? 'Generating…' : 'Generate Token' }}
+          </button>
+          <button v-if="oauthCachedTokenAvailable" class="btn btn-secondary btn-sm" @click="showCachedOAuthToken">
+            Display Cached Token
+          </button>
+          <button v-if="oauthCachedTokenAvailable" class="btn btn-ghost btn-sm" @click="clearCachedOAuthToken">
+            Clear Cached Token
+          </button>
+          <span v-if="oauthError" class="save-feedback save-feedback--error">{{ oauthError }}</span>
+        </div>
+
+        <div v-if="oauthResult" class="cte-result">
+          <div class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">Access Token</span>
+              <div class="cte-block-actions">
+                <button class="btn btn-ghost btn-sm" @click="oauthAccessTokenDecoded = !oauthAccessTokenDecoded">
+                  {{ oauthAccessTokenDecoded ? 'Hide Decoded' : 'Decode' }}
+                </button>
+                <button class="btn btn-ghost btn-sm" @click="copyOAuthField('access_token')">
+                  {{ oauthCopied === 'access_token' ? 'Copied!' : 'Copy' }}
+                </button>
+              </div>
+            </div>
+            <pre class="cte-raw">{{ oauthResult.access_token }}</pre>
+
+            <template v-if="oauthAccessTokenDecoded">
+              <template v-if="isJwt(oauthResult.access_token)">
+                <p class="cte-block-label">Decoded Header</p>
+                <pre class="cte-json">{{ fmtJson(decodeJwtPart(oauthResult.access_token, 0)) }}</pre>
+                <p class="cte-block-label">Decoded Payload</p>
+                <pre class="cte-json">{{ fmtJson(decodeJwtPart(oauthResult.access_token, 1)) }}</pre>
+              </template>
+              <p v-else class="form-hint">This token is opaque (not a JWT) — nothing to decode.</p>
+            </template>
+          </div>
+
+          <div class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">Refresh Token</span>
+              <button
+                v-if="oauthResult.refresh_token"
+                class="btn btn-ghost btn-sm"
+                @click="copyOAuthField('refresh_token')"
+              >
+                {{ oauthCopied === 'refresh_token' ? 'Copied!' : 'Copy' }}
+              </button>
+            </div>
+            <pre v-if="oauthResult.refresh_token" class="cte-raw">{{ oauthResult.refresh_token }}</pre>
+            <p v-else class="form-hint">
+              No refresh token returned — check that the scope includes <code>offline_access</code> and the provider issues one.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -226,8 +318,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 import { exchangeToken } from '@/lib/igbcApi'
 
 const { getAccessTokenSilently } = useAuth0()
@@ -298,6 +391,131 @@ async function copyToken() {
 
 function fmtJson(value) {
   return value == null ? 'null' : JSON.stringify(value, null, 2)
+}
+
+const oauthForm = reactive({
+  issuer: '',
+  clientId: '',
+  audience: '',
+  scope: 'openid profile email offline_access',
+  redirectUri: `${window.location.origin}/oidc-callback`,
+})
+
+function loadPreset() {
+  oauthForm.issuer = 'https://partners.sheev.fr'
+  oauthForm.clientId = 'tpc_2JQ2Sq26bj6DYyCB6KV7e1'
+  oauthForm.audience = 'api://sheev-public/v1'
+  oauthForm.scope = 'openid profile email offline_access'
+}
+
+const generatingOAuthToken = ref(false)
+const oauthError = ref('')
+const oauthResult = ref(null)
+const oauthCopied = ref('')
+const oauthAccessTokenDecoded = ref(false)
+
+// sessionStorage (not localStorage) so this stays isolated from the primary
+// auth0-vue session and doesn't outlive the tab.
+const oauthSessionStore = new WebStorageStateStore({ store: window.sessionStorage })
+const oauthCachedTokenAvailable = ref(false)
+
+function buildOAuthUserManager() {
+  return new UserManager({
+    authority: oauthForm.issuer,
+    client_id: oauthForm.clientId,
+    redirect_uri: oauthForm.redirectUri,
+    scope: oauthForm.scope,
+    response_type: 'code',
+    loadUserInfo: false,
+    automaticSilentRenew: false,
+    userStore: oauthSessionStore,
+    stateStore: oauthSessionStore,
+    ...(oauthForm.audience && { extraQueryParams: { audience: oauthForm.audience } }),
+  })
+}
+
+async function refreshCachedOAuthTokenState() {
+  try {
+    const user = await buildOAuthUserManager().getUser()
+    oauthCachedTokenAvailable.value = !!user
+  } catch {
+    oauthCachedTokenAvailable.value = false
+  }
+}
+
+watch(activeFeature, (key) => {
+  if (key === 'oauth2') refreshCachedOAuthTokenState()
+})
+
+watch([() => oauthForm.issuer, () => oauthForm.clientId], () => {
+  if (activeFeature.value === 'oauth2') refreshCachedOAuthTokenState()
+})
+
+async function handleGenerateOAuthToken() {
+  generatingOAuthToken.value = true
+  oauthError.value = ''
+  oauthResult.value = null
+  oauthAccessTokenDecoded.value = false
+  try {
+    const user = await buildOAuthUserManager().signinPopup()
+    oauthResult.value = {
+      access_token: user.access_token,
+      refresh_token: user.refresh_token,
+    }
+    oauthCachedTokenAvailable.value = true
+  } catch (e) {
+    oauthError.value = e?.message ?? 'Token generation failed.'
+  } finally {
+    generatingOAuthToken.value = false
+  }
+}
+
+async function showCachedOAuthToken() {
+  oauthError.value = ''
+  try {
+    const user = await buildOAuthUserManager().getUser()
+    if (!user) {
+      oauthCachedTokenAvailable.value = false
+      oauthError.value = 'No cached token found.'
+      return
+    }
+    oauthResult.value = { access_token: user.access_token, refresh_token: user.refresh_token }
+    oauthAccessTokenDecoded.value = false
+  } catch (e) {
+    oauthError.value = e?.message ?? 'Failed to read cached token.'
+  }
+}
+
+async function clearCachedOAuthToken() {
+  try {
+    await buildOAuthUserManager().removeUser()
+  } finally {
+    oauthCachedTokenAvailable.value = false
+    oauthResult.value = null
+    oauthAccessTokenDecoded.value = false
+  }
+}
+
+async function copyOAuthField(field) {
+  const value = oauthResult.value?.[field]
+  if (!value) return
+  await navigator.clipboard.writeText(value)
+  oauthCopied.value = field
+  setTimeout(() => { oauthCopied.value = '' }, 2000)
+}
+
+function isJwt(token) {
+  return typeof token === 'string' && token.split('.').length === 3
+}
+
+function decodeJwtPart(token, index) {
+  try {
+    const part = token.split('.')[index]
+    const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(base64))
+  } catch {
+    return null
+  }
 }
 </script>
 
@@ -449,6 +667,11 @@ function fmtJson(value) {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+}
+
+.cte-block-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .cte-block-label {

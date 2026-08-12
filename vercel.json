@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/oidc-callback", "destination": "/oidc-callback.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
