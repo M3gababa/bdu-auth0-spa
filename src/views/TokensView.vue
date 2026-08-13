@@ -56,7 +56,7 @@
 
           <div v-if="token.activeTab === 'raw'" class="token-panel">
             <template v-if="isJwt(token.raw)">
-              <pre class="jwt-raw"><span class="jwt-part--header">{{ jwtParts(token.raw).header }}</span>.<span class="jwt-part--payload">{{ jwtParts(token.raw).payload }}</span>.<span class="jwt-part--sig">{{ jwtParts(token.raw).signature }}</span></pre>
+              <pre class="jwt-raw" v-html="highlightJwt(token.raw)"></pre>
             </template>
             <pre v-else class="jwt-raw jwt-raw--opaque">{{ token.raw }}</pre>
           </div>
@@ -65,11 +65,11 @@
             <template v-if="isJwt(token.raw)">
               <div class="decoded-section">
                 <p class="decoded-label">Header</p>
-                <pre class="json-block">{{ fmtJson(decodeJwtPart(token.raw, 0)) }}</pre>
+                <pre class="json-block" v-html="highlightJson(decodeJwtPart(token.raw, 0))"></pre>
               </div>
               <div class="decoded-section">
                 <p class="decoded-label">Payload</p>
-                <pre class="json-block">{{ fmtJson(decodeJwtPart(token.raw, 1)) }}</pre>
+                <pre class="json-block" v-html="highlightJson(decodeJwtPart(token.raw, 1))"></pre>
               </div>
             </template>
             <p v-else class="opaque-notice">This token is opaque (not a JWT). Set <code>VITE_AUTH0_AUDIENCE</code> to receive a signed JWT access token.</p>
@@ -85,6 +85,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import { highlightJson, highlightJwt } from '@/lib/syntaxHighlight'
 
 const { getAccessTokenSilently, idTokenClaims } = useAuth0()
 
@@ -105,7 +106,7 @@ const tokens = reactive([
     label: 'ID Token',
     description: 'Identity assertion issued by Auth0. Contains user profile claims.',
     raw: null,
-    activeTab: 'decoded',
+    activeTab: 'raw',
     copied: false,
   },
 ])
@@ -125,11 +126,6 @@ function isJwt(token) {
   return typeof token === 'string' && token.split('.').length === 3
 }
 
-function jwtParts(token) {
-  const [header, payload, signature] = token.split('.')
-  return { header, payload, signature }
-}
-
 function decodeJwtPart(token, index) {
   try {
     const part = token.split('.')[index]
@@ -138,10 +134,6 @@ function decodeJwtPart(token, index) {
   } catch {
     return null
   }
-}
-
-function fmtJson(value) {
-  return value == null ? 'null' : JSON.stringify(value, null, 2)
 }
 
 async function copyToken(token) {
@@ -230,10 +222,6 @@ async function copyToken(token) {
 }
 
 .jwt-raw--opaque { color: #555; }
-
-.jwt-part--header  { color: #9921fe; }
-.jwt-part--payload { color: #1655c4; }
-.jwt-part--sig     { color: #c4641b; }
 
 /* ── Decoded JSON ── */
 .decoded-section {

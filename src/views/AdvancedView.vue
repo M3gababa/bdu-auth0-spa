@@ -163,7 +163,7 @@
               <span class="cte-block-label">Access Token</span>
               <button class="btn btn-ghost btn-sm" @click="copyToken">{{ copied ? 'Copied!' : 'Copy' }}</button>
             </div>
-            <pre class="cte-raw">{{ result.access_token }}</pre>
+            <pre class="cte-raw" v-html="highlightJwt(result.access_token)"></pre>
           </div>
 
           <div v-if="includeRefreshToken" class="cte-block">
@@ -185,7 +185,7 @@
 
           <div class="cte-block">
             <p class="cte-block-label">Decoded Payload</p>
-            <pre class="cte-json">{{ fmtJson(result.decoded) }}</pre>
+            <pre class="cte-json" v-html="highlightJson(result.decoded)"></pre>
           </div>
         </div>
       </div>
@@ -276,14 +276,14 @@
                 </button>
               </div>
             </div>
-            <pre class="cte-raw">{{ oauthResult.access_token }}</pre>
+            <pre class="cte-raw" v-html="highlightJwt(oauthResult.access_token)"></pre>
 
             <template v-if="oauthAccessTokenDecoded">
               <template v-if="isJwt(oauthResult.access_token)">
                 <p class="cte-block-label">Decoded Header</p>
-                <pre class="cte-json">{{ fmtJson(decodeJwtPart(oauthResult.access_token, 0)) }}</pre>
+                <pre class="cte-json" v-html="highlightJson(decodeJwtPart(oauthResult.access_token, 0))"></pre>
                 <p class="cte-block-label">Decoded Payload</p>
-                <pre class="cte-json">{{ fmtJson(decodeJwtPart(oauthResult.access_token, 1)) }}</pre>
+                <pre class="cte-json" v-html="highlightJson(decodeJwtPart(oauthResult.access_token, 1))"></pre>
               </template>
               <p v-else class="form-hint">This token is opaque (not a JWT) — nothing to decode.</p>
             </template>
@@ -343,7 +343,7 @@
             <span class="cte-block-label">oauth-client-metadata.json</span>
             <button class="btn btn-ghost btn-sm" @click="copyCimd">{{ cimdCopied ? 'Copied!' : 'Copy' }}</button>
           </div>
-          <pre v-if="cimdJson" class="cte-json">{{ fmtJson(cimdJson) }}</pre>
+          <pre v-if="cimdJson" class="cte-json" v-html="highlightJson(cimdJson)"></pre>
           <p v-else-if="cimdError" class="save-feedback save-feedback--error">{{ cimdError }}</p>
           <p v-else class="form-hint">Loading…</p>
         </div>
@@ -440,7 +440,7 @@
 
           <div class="cte-block">
             <p class="cte-block-label">Full Response</p>
-            <pre class="cte-json">{{ fmtJson(registerResult) }}</pre>
+            <pre class="cte-json" v-html="highlightJson(registerResult)"></pre>
           </div>
         </div>
       </div>
@@ -477,6 +477,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 import { exchangeToken } from '@/lib/igbcApi'
+import { highlightJson, highlightJwt } from '@/lib/syntaxHighlight'
 
 const { getAccessTokenSilently } = useAuth0()
 

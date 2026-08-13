@@ -413,6 +413,18 @@ code {
   vertical-align: -0.15em;
 }
 
+/* ─── JSON / JWT syntax highlighting (see src/lib/syntaxHighlight.js) ────────── */
+
+.json-key      { color: var(--auth0-accentuate-2); font-weight: 600; }
+.json-string   { color: #0f7b3f; }
+.json-number   { color: #c4641b; }
+.json-boolean  { color: #b91c1c; font-weight: 600; }
+.json-null     { color: #6b7280; font-style: italic; }
+
+.jwt-part--header  { color: #9921fe; }
+.jwt-part--payload { color: #1655c4; }
+.jwt-part--sig     { color: #c4641b; }
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
