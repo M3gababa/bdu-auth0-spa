@@ -82,55 +82,28 @@
       <div class="card">
         <div class="form-grid">
           <div class="form-group">
-            <label class="form-label" for="cte-token-name">Token Name</label>
-            <input
-              id="cte-token-name"
-              v-model="tokenName"
-              type="text"
-              class="form-input"
-              placeholder="e.g. my-test-token"
-              title="Not used yet"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="cte-expiration">Expiration</label>
-            <select id="cte-expiration" v-model="expirationDays" class="form-input" title="Not used yet">
-              <option v-for="opt in expirationOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
-
-          <div class="form-group form-group--full">
-            <label class="form-label" for="cte-description">Description</label>
-            <input
-              id="cte-description"
-              v-model="description"
-              type="text"
-              class="form-input"
-              placeholder="What is this token for?"
-              title="Not used yet"
-            />
-          </div>
-        </div>
-
-        <div class="form-grid form-grid--spaced">
-          <div class="form-group">
             <label class="form-label" for="cte-audience">Target Audience</label>
             <select id="cte-audience" v-model="audience" class="form-input">
               <option v-for="opt in AUDIENCES" :key="opt.value" :value="opt.value">{{ opt.value }}</option>
             </select>
             <span class="form-hint">Must be on the server-side allowed-audiences list.</span>
+
+            <label class="scope-item scope-item--spaced">
+              <input type="checkbox" v-model="includeRefreshToken" />
+              <span>Include a refresh token</span>
+            </label>
+            <span class="form-hint">Sends the <code>offline_access</code> scope to request a <code>refresh_token</code> (also requires "Allow Offline Access" on the target API).</span>
           </div>
 
           <div class="form-group">
             <label class="form-label">Permissions / Scopes</label>
             <div class="scope-grid">
-              <label v-for="scope in currentScopes" :key="scope" class="scope-item" title="Not used yet">
+              <label v-for="scope in currentScopes" :key="scope" class="scope-item">
                 <input type="checkbox" v-model="selectedScopes[scope]" />
                 <span>{{ scope }}</span>
               </label>
             </div>
-            <span class="form-hint">Not yet supported by the API — the audience alone determines the token's permissions server-side for now.</span>
+            <span class="form-hint">Sent as the <code>scope</code> parameter — Auth0 RBAC, not this list, is the actual gate on what's granted.</span>
           </div>
         </div>
 
@@ -163,6 +136,23 @@
               <button class="btn btn-ghost btn-sm" @click="copyToken">{{ copied ? 'Copied!' : 'Copy' }}</button>
             </div>
             <pre class="cte-raw">{{ result.access_token }}</pre>
+          </div>
+
+          <div v-if="includeRefreshToken" class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">Refresh Token</span>
+              <button
+                v-if="result.refresh_token"
+                class="btn btn-ghost btn-sm"
+                @click="copyRefreshToken"
+              >
+                {{ refreshCopied ? 'Copied!' : 'Copy' }}
+              </button>
+            </div>
+            <pre v-if="result.refresh_token" class="cte-raw">{{ result.refresh_token }}</pre>
+            <p v-else class="form-hint">
+              No refresh token returned — check "Allow Offline Access" is enabled on the target API.
+            </p>
           </div>
 
           <div class="cte-block">
@@ -345,28 +335,20 @@ const audience = ref(AUDIENCES[0].value)
 const currentScopes = computed(() => AUDIENCES.find((a) => a.value === audience.value)?.scopes ?? [])
 const selectedScopes = reactive({})
 
-// Not sent to the API yet — placeholders until the endpoint supports them
-const tokenName = ref('')
-const description = ref('')
-const EXPIRATION_DAYS = [1, 7, 30, 60, 90]
-const expirationDays = ref(30)
-const expirationOptions = computed(() =>
-  EXPIRATION_DAYS.map((days) => ({
-    value: days,
-    label: `${days} day${days === 1 ? '' : 's'} (${formatExpiryDate(days)})`,
-  }))
-)
+const includeRefreshToken = ref(false)
 
-function formatExpiryDate(days) {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+// Space-delimited scope forwarded verbatim to /oauth/token — Auth0 RBAC (not this string) is the actual gate.
+const requestedScope = computed(() => {
+  const scopes = currentScopes.value.filter((scope) => selectedScopes[scope])
+  if (includeRefreshToken.value) scopes.push('offline_access')
+  return scopes.join(' ')
+})
 
 const exchanging = ref(false)
 const exchangeError = ref('')
 const result = ref(null)
 const copied = ref(false)
+const refreshCopied = ref(false)
 
 async function handleExchange() {
   exchanging.value = true
@@ -374,7 +356,7 @@ async function handleExchange() {
   result.value = null
   try {
     const token = await getAccessTokenSilently()
-    result.value = await exchangeToken(token, audience.value)
+    result.value = await exchangeToken(token, audience.value, requestedScope.value)
   } catch (e) {
     exchangeError.value = e?.message ?? 'Token exchange failed.'
   } finally {
@@ -387,6 +369,13 @@ async function copyToken() {
   await navigator.clipboard.writeText(result.value.access_token)
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
+}
+
+async function copyRefreshToken() {
+  if (!result.value?.refresh_token) return
+  await navigator.clipboard.writeText(result.value.refresh_token)
+  refreshCopied.value = true
+  setTimeout(() => { refreshCopied.value = false }, 2000)
 }
 
 function fmtJson(value) {
@@ -641,6 +630,10 @@ function decodeJwtPart(token, index) {
   font-size: 0.875rem;
   color: var(--auth0-accentuate-1);
   cursor: pointer;
+}
+
+.scope-item--spaced {
+  margin-top: 0.5rem;
 }
 
 .save-feedback {

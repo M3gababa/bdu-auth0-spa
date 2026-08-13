@@ -29,6 +29,7 @@ export function updateConsents(token, data) {
 }
 
 // Custom Token Exchange (RFC 8693) — dev-only endpoint as of 2026-08-11
-export function exchangeToken(token, audience) {
-  return request('/api/security/cte', { method: 'POST', token, body: { audience } })
+// scope is optional, space-delimited, forwarded verbatim to /oauth/token (no server-side allowlist)
+export function exchangeToken(token, audience, scope) {
+  return request('/api/security/cte', { method: 'POST', token, body: { audience, ...(scope && { scope }) } })
 }
