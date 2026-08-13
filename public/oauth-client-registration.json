@@ -1,0 +1,11 @@
+{
+    "client_name": "SPA - DCR",
+    "redirect_uris": [
+      "http://localhost:5173/oidc-callback",
+      "https://bdu-auth0-spa.vercel.app/oidc-callback",
+      "https://bdu-spa.sheev.fr/oidc-callback"
+    ],
+    "token_endpoint_auth_method": "client_secret_post",
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code"]
+}

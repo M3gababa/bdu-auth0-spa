@@ -1,6 +1,6 @@
 {
   "client_id": "https://bdu-spa.sheev.fr/oauth-client-metadata.json",
-  "client_name": "SPA - 3rd Party Client",
+  "client_name": "SPA - CIMD",
   "application_type": "web",
   "description": "Application used to request a token from any OIDC-compliant authorization server.",
   "logo_uri": "https://img.icons8.com/?size=100&id=vlHrsxLUPnRe&format=png&color=000000",

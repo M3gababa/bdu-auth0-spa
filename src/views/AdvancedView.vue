@@ -44,6 +44,34 @@
 
       <button
         class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'cimd' }"
+        @click="selectFeature('cimd')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M9 13h6" />
+          <path d="M9 17h6" />
+        </svg>
+        <span class="feature-btn-name">Client ID Metadata Document</span>
+      </button>
+
+      <button
+        class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'dcr' }"
+        @click="selectFeature('dcr')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="7" r="4" />
+          <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
+          <line x1="19" y1="8" x2="19" y2="14" />
+          <line x1="16" y1="11" x2="22" y2="11" />
+        </svg>
+        <span class="feature-btn-name">Dynamic Client Registration</span>
+      </button>
+
+      <button
+        class="feature-btn"
         :class="{ 'feature-btn--active': activeFeature === 'tbd' }"
         @click="selectFeature('tbd')"
       >
@@ -282,6 +310,143 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         Client ID Metadata Document (CIMD)
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'cimd'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+              <path d="M9 13h6" />
+              <path d="M9 17h6" />
+            </svg>
+            Client ID Metadata Document
+          </h2>
+          <p class="section-subtitle">
+            Served at <code>{{ cimdUrl }}</code> — usable as a <code>client_id</code> by any OIDC-compliant
+            authorization server that supports CIMD (RFC-in-progress).
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <p class="cimd-note">
+          After importing this client in Auth0, the application must be changed to
+          <strong>Single Page Application</strong> — it's imported as a generic client by default.
+        </p>
+
+        <div class="cte-block">
+          <div class="cte-block-header">
+            <span class="cte-block-label">oauth-client-metadata.json</span>
+            <button class="btn btn-ghost btn-sm" @click="copyCimd">{{ cimdCopied ? 'Copied!' : 'Copy' }}</button>
+          </div>
+          <pre v-if="cimdJson" class="cte-json">{{ fmtJson(cimdJson) }}</pre>
+          <p v-else-if="cimdError" class="save-feedback save-feedback--error">{{ cimdError }}</p>
+          <p v-else class="form-hint">Loading…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         Dynamic Client Registration (DCR)
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'dcr'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="7" r="4" />
+              <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="16" y1="11" x2="22" y2="11" />
+            </svg>
+            Dynamic Client Registration
+          </h2>
+          <p class="section-subtitle">
+            Register a new OIDC client (RFC 7591). Calls <code>POST https://auth.sheev.fr/oidc/register</code>.
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-group form-group--full">
+            <label class="form-label" for="dcr-client-name">Client Name</label>
+            <input id="dcr-client-name" v-model="dcrForm.clientName" type="text" class="form-input" placeholder="e.g. SPA - DCR" />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="dcr-redirect-uris">Redirect URIs</label>
+            <textarea
+              id="dcr-redirect-uris"
+              v-model="dcrForm.redirectUris"
+              class="form-input"
+              rows="3"
+              placeholder="One per line"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="dcr-auth-method">Token Endpoint Auth Method</label>
+            <select id="dcr-auth-method" v-model="dcrForm.tokenEndpointAuthMethod" class="form-input">
+              <option value="none">none</option>
+              <option value="client_secret_post">client_secret_post</option>
+              <option value="client_secret_basic">client_secret_basic</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="dcr-grant-types">Grant Types</label>
+            <input
+              id="dcr-grant-types"
+              v-model="dcrForm.grantTypes"
+              type="text"
+              class="form-input"
+              placeholder="authorization_code, refresh_token"
+            />
+            <span class="form-hint">Comma-separated.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="dcr-response-types">Response Types</label>
+            <input id="dcr-response-types" v-model="dcrForm.responseTypes" type="text" class="form-input" placeholder="code" />
+            <span class="form-hint">Comma-separated.</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary btn-sm" @click="loadDcrPreset">Load Preset Values</button>
+          <button class="btn btn-primary btn-sm" :disabled="registering" @click="handleRegisterApp">
+            {{ registering ? 'Registering…' : 'Register App' }}
+          </button>
+          <span v-if="registerError" class="save-feedback save-feedback--error">{{ registerError }}</span>
+        </div>
+
+        <div v-if="registerResult" class="cte-result">
+          <dl class="info-list">
+            <div class="info-item">
+              <dt>Client ID</dt>
+              <dd>{{ registerResult.client_id }}</dd>
+            </div>
+            <div v-if="registerResult.client_secret" class="info-item">
+              <dt>Client Secret</dt>
+              <dd>{{ registerResult.client_secret }}</dd>
+            </div>
+          </dl>
+
+          <div class="cte-block">
+            <p class="cte-block-label">Full Response</p>
+            <pre class="cte-json">{{ fmtJson(registerResult) }}</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          TBD
     ═════════════════════════════════════════ -->
     <section v-if="activeFeature === 'tbd'" class="section">
@@ -506,6 +671,88 @@ function decodeJwtPart(token, index) {
     return null
   }
 }
+
+const cimdUrl = `${window.location.origin}/oauth-client-metadata.json`
+const cimdJson = ref(null)
+const cimdError = ref('')
+const cimdCopied = ref(false)
+
+async function loadCimd() {
+  if (cimdJson.value || cimdError.value) return
+  try {
+    const res = await fetch('/oauth-client-metadata.json')
+    if (!res.ok) throw new Error(`Request failed with status ${res.status}`)
+    cimdJson.value = await res.json()
+  } catch (e) {
+    cimdError.value = e?.message ?? 'Failed to load the CIMD document.'
+  }
+}
+
+async function copyCimd() {
+  if (!cimdJson.value) return
+  await navigator.clipboard.writeText(fmtJson(cimdJson.value))
+  cimdCopied.value = true
+  setTimeout(() => { cimdCopied.value = false }, 2000)
+}
+
+watch(activeFeature, (key) => {
+  if (key === 'cimd') loadCimd()
+})
+
+const dcrForm = reactive({
+  clientName: '',
+  redirectUris: '',
+  tokenEndpointAuthMethod: 'client_secret_post',
+  grantTypes: '',
+  responseTypes: '',
+})
+
+async function loadDcrPreset() {
+  const res = await fetch('/oauth-client-registration.json')
+  const preset = await res.json()
+  dcrForm.clientName = preset.client_name ?? ''
+  dcrForm.redirectUris = (preset.redirect_uris ?? []).join('\n')
+  dcrForm.tokenEndpointAuthMethod = preset.token_endpoint_auth_method ?? 'client_secret_post'
+  dcrForm.grantTypes = (preset.grant_types ?? []).join(', ')
+  dcrForm.responseTypes = (preset.response_types ?? []).join(', ')
+}
+
+const registering = ref(false)
+const registerError = ref('')
+const registerResult = ref(null)
+
+function splitList(value, separator) {
+  return value.split(separator).map((v) => v.trim()).filter(Boolean)
+}
+
+async function handleRegisterApp() {
+  registering.value = true
+  registerError.value = ''
+  registerResult.value = null
+  try {
+    const payload = {
+      client_name: dcrForm.clientName,
+      redirect_uris: splitList(dcrForm.redirectUris, '\n'),
+      token_endpoint_auth_method: dcrForm.tokenEndpointAuthMethod,
+      grant_types: splitList(dcrForm.grantTypes, ','),
+      response_types: splitList(dcrForm.responseTypes, ','),
+    }
+    const res = await fetch('https://auth.sheev.fr/oidc/register', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw new Error(data?.error_description || data?.error || `Request failed with status ${res.status}`)
+    }
+    registerResult.value = data
+  } catch (e) {
+    registerError.value = e?.message ?? 'Registration failed.'
+  } finally {
+    registering.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -644,6 +891,15 @@ function decodeJwtPart(token, index) {
 }
 .save-feedback--error {
   color: #b91c1c;
+}
+
+.cimd-note {
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  background: var(--auth0-accentuate-4);
+  color: var(--auth0-accentuate-1);
 }
 
 .cte-result {
