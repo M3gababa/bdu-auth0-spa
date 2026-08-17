@@ -17,6 +17,34 @@
     <div class="feature-grid">
       <button
         class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'cimd' }"
+        @click="selectFeature('cimd')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M9 13h6" />
+          <path d="M9 17h6" />
+        </svg>
+        <span class="feature-btn-name">Client ID Metadata Document</span>
+      </button>
+
+      <button
+        class="feature-btn"
+        :class="{ 'feature-btn--active': activeFeature === 'dcr' }"
+        @click="selectFeature('dcr')"
+      >
+        <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="7" r="4" />
+          <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
+          <line x1="19" y1="8" x2="19" y2="14" />
+          <line x1="16" y1="11" x2="22" y2="11" />
+        </svg>
+        <span class="feature-btn-name">Dynamic Client Registration</span>
+      </button>
+
+      <button
+        class="feature-btn"
         :class="{ 'feature-btn--active': activeFeature === 'cte' }"
         @click="selectFeature('cte')"
       >
@@ -44,30 +72,31 @@
 
       <button
         class="feature-btn"
-        :class="{ 'feature-btn--active': activeFeature === 'cimd' }"
-        @click="selectFeature('cimd')"
+        :class="{ 'feature-btn--active': activeFeature === 'mycreds' }"
+        @click="selectFeature('mycreds')"
       >
         <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <path d="M14 2v6h6" />
-          <path d="M9 13h6" />
-          <path d="M9 17h6" />
+          <line x1="8" y1="6" x2="21" y2="6" />
+          <line x1="8" y1="12" x2="21" y2="12" />
+          <line x1="8" y1="18" x2="21" y2="18" />
+          <line x1="3" y1="6" x2="3.01" y2="6" />
+          <line x1="3" y1="12" x2="3.01" y2="12" />
+          <line x1="3" y1="18" x2="3.01" y2="18" />
         </svg>
-        <span class="feature-btn-name">Client ID Metadata Document</span>
+        <span class="feature-btn-name">My Credentials</span>
       </button>
 
       <button
         class="feature-btn"
-        :class="{ 'feature-btn--active': activeFeature === 'dcr' }"
-        @click="selectFeature('dcr')"
+        :class="{ 'feature-btn--active': activeFeature === 'ropg' }"
+        @click="selectFeature('ropg')"
       >
         <svg class="feature-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="9" cy="7" r="4" />
-          <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
-          <line x1="19" y1="8" x2="19" y2="14" />
-          <line x1="16" y1="11" x2="22" y2="11" />
+          <circle cx="7.5" cy="15.5" r="5.5" />
+          <path d="M21 2l-9.6 9.6" />
+          <path d="M15.5 7.5l3 3L22 7l-3-3" />
         </svg>
-        <span class="feature-btn-name">Dynamic Client Registration</span>
+        <span class="feature-btn-name">ROPG</span>
       </button>
 
       <button
@@ -447,6 +476,362 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         ROPG
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'ropg'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="7.5" cy="15.5" r="5.5" />
+              <path d="M21 2l-9.6 9.6" />
+              <path d="M15.5 7.5l3 3L22 7l-3-3" />
+            </svg>
+            ROPG
+          </h2>
+          <p class="section-subtitle">
+            Run a Resource Owner Password Credentials grant directly against Auth0.
+            Need credentials first? Provision some under <strong>My Credentials</strong>.
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="ropg-client-id">Client ID</label>
+            <input id="ropg-client-id" v-model="ropgForm.clientId" type="text" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ropg-client-secret">Client Secret</label>
+            <input id="ropg-client-secret" v-model="ropgForm.clientSecret" type="text" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ropg-username">Username</label>
+            <input id="ropg-username" v-model="ropgForm.username" type="text" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ropg-password">Password</label>
+            <div class="input-with-action">
+              <input
+                id="ropg-password"
+                v-model="ropgForm.password"
+                :type="ropgPasswordVisible ? 'text' : 'password'"
+                class="form-input"
+              />
+              <button type="button" class="btn btn-ghost btn-sm" @click="ropgPasswordVisible = !ropgPasswordVisible">
+                {{ ropgPasswordVisible ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ropg-audience">Audience</label>
+            <select id="ropg-audience" v-model="ropgForm.audience" class="form-input">
+              <option v-for="opt in AUDIENCES" :key="opt.value" :value="opt.value">{{ opt.value }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Permissions</label>
+            <div class="scope-grid">
+              <label v-for="scope in ropgCurrentScopes" :key="scope" class="scope-item">
+                <input type="checkbox" v-model="ropgSelectedScopes[scope]" />
+                <span>{{ scope }}</span>
+              </label>
+            </div>
+            <span class="form-hint">Sent as the <code>scope</code> parameter, alongside <code>openid profile offline_access</code>.</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" :disabled="generatingRopgToken || !ropgFormValid" @click="handleGenerateRopgToken">
+            {{ generatingRopgToken ? 'Generating…' : 'Generate Token' }}
+          </button>
+          <span v-if="ropgError" class="save-feedback save-feedback--error">{{ ropgError }}</span>
+        </div>
+
+        <div v-if="ropgResult" class="cte-result">
+          <dl class="info-list">
+            <div class="info-item">
+              <dt>Token Type</dt>
+              <dd>{{ ropgResult.token_type }}</dd>
+            </div>
+            <div class="info-item">
+              <dt>Expires In</dt>
+              <dd>{{ ropgResult.expires_in }}s</dd>
+            </div>
+            <div v-if="ropgResult.scope" class="info-item">
+              <dt>Scope</dt>
+              <dd>{{ ropgResult.scope }}</dd>
+            </div>
+          </dl>
+
+          <div class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">Access Token</span>
+              <div class="cte-block-actions">
+                <button class="btn btn-ghost btn-sm" @click="ropgAccessTokenDecoded = !ropgAccessTokenDecoded">
+                  {{ ropgAccessTokenDecoded ? 'Hide Decoded' : 'Decode' }}
+                </button>
+                <button class="btn btn-ghost btn-sm" @click="copyRopgField('access_token')">
+                  {{ ropgCopied === 'access_token' ? 'Copied!' : 'Copy' }}
+                </button>
+              </div>
+            </div>
+            <pre class="cte-raw" v-html="highlightJwt(ropgResult.access_token)"></pre>
+
+            <template v-if="ropgAccessTokenDecoded">
+              <template v-if="isJwt(ropgResult.access_token)">
+                <p class="cte-block-label">Decoded Payload</p>
+                <pre class="cte-json" v-html="highlightJson(decodeJwtPart(ropgResult.access_token, 1))"></pre>
+              </template>
+              <p v-else class="form-hint">This token is opaque (not a JWT) — nothing to decode.</p>
+            </template>
+          </div>
+
+          <div class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">ID Token</span>
+              <div v-if="ropgResult.id_token" class="cte-block-actions">
+                <button class="btn btn-ghost btn-sm" @click="ropgIdTokenDecoded = !ropgIdTokenDecoded">
+                  {{ ropgIdTokenDecoded ? 'Hide Decoded' : 'Decode' }}
+                </button>
+                <button class="btn btn-ghost btn-sm" @click="copyRopgField('id_token')">
+                  {{ ropgCopied === 'id_token' ? 'Copied!' : 'Copy' }}
+                </button>
+              </div>
+            </div>
+            <pre v-if="ropgResult.id_token" class="cte-raw" v-html="highlightJwt(ropgResult.id_token)"></pre>
+            <p v-else class="form-hint">No ID token returned — check the scope includes <code>openid</code>.</p>
+
+            <template v-if="ropgIdTokenDecoded && ropgResult.id_token">
+              <template v-if="isJwt(ropgResult.id_token)">
+                <p class="cte-block-label">Decoded Payload</p>
+                <pre class="cte-json" v-html="highlightJson(decodeJwtPart(ropgResult.id_token, 1))"></pre>
+              </template>
+              <p v-else class="form-hint">This token is opaque (not a JWT) — nothing to decode.</p>
+            </template>
+          </div>
+
+          <div class="cte-block">
+            <div class="cte-block-header">
+              <span class="cte-block-label">Refresh Token</span>
+              <button
+                v-if="ropgResult.refresh_token"
+                class="btn btn-ghost btn-sm"
+                @click="copyRopgField('refresh_token')"
+              >
+                {{ ropgCopied === 'refresh_token' ? 'Copied!' : 'Copy' }}
+              </button>
+            </div>
+            <pre v-if="ropgResult.refresh_token" class="cte-raw">{{ ropgResult.refresh_token }}</pre>
+            <p v-else class="form-hint">
+              No refresh token returned — check <code>offline_access</code> is included and the target audience allows offline access.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         My Credentials
+    ═════════════════════════════════════════ -->
+    <section v-if="activeFeature === 'mycreds'" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+            My Credentials
+          </h2>
+          <p class="section-subtitle">
+            Public-API-Users credentials provisioned for your account. Calls <code>GET /api/security/cdb</code>.
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="activeFeature = null">Close</button>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Credentials</h3>
+        <dl class="info-list">
+          <div class="info-item">
+            <dt>Client ID</dt>
+            <dd>{{ identityClientId || '—' }}</dd>
+          </div>
+          <div class="info-item">
+            <dt>Client Secret</dt>
+            <dd>{{ identityClientSecret ? (identitySecretVisible ? identityClientSecret : maskedPassword) : '—' }}
+              <button
+                v-if="identityClientSecret"
+                class="btn btn-ghost btn-sm"
+                @click="identitySecretVisible = !identitySecretVisible"
+              >
+                {{ identitySecretVisible ? 'Hide' : 'Show' }}
+              </button>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Provisioned Credentials</h3>
+          <button class="btn btn-primary btn-sm" @click="openCreateModal">Create New</button>
+        </div>
+        <p v-if="mycredsLoading" class="form-hint">Loading…</p>
+        <p v-else-if="mycredsError" class="save-feedback save-feedback--error">{{ mycredsError }}</p>
+        <p v-else-if="!mycredsList.length" class="form-hint">No credentials provisioned yet — create one above.</p>
+
+        <table v-else class="creds-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Endpoint</th>
+              <th>Permissions</th>
+              <th>Expiration</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(cred, index) in mycredsList" :key="cred.identity ?? index">
+              <td>{{ cred.name }}</td>
+              <td>{{ cred.description }}</td>
+              <td>{{ cred.endpoint }}</td>
+              <td>
+                <span v-for="perm in cred.permissions" :key="perm" class="badge badge-info">{{ perm }}</span>
+              </td>
+              <td>{{ cred.expiration }}</td>
+              <td>
+                <button
+                  class="btn btn-sm btn-delete"
+                  :disabled="deletingCredIdentity === cred.identity"
+                  @click="handleDeleteCredential(cred)"
+                >
+                  {{ deletingCredIdentity === cred.identity ? 'Deleting…' : 'Delete' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         Create Credential (modal)
+    ═════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="createModalOpen" class="modal-overlay" @click.self="closeCreateModal">
+        <div class="modal-dialog card">
+          <div class="card-header">
+            <h3 class="card-title">Create Credential</h3>
+            <button class="btn btn-ghost btn-sm" @click="closeCreateModal">Close</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="cdb-name">Name</label>
+              <input id="cdb-name" v-model="cdbForm.name" type="text" class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cdb-expiration">Expiration</label>
+              <input id="cdb-expiration" v-model="cdbForm.expiration" type="date" class="form-input" />
+            </div>
+
+            <div class="form-group form-group--full">
+              <label class="form-label" for="cdb-description">Description</label>
+              <input id="cdb-description" v-model="cdbForm.description" type="text" class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cdb-endpoint">Endpoint</label>
+              <select id="cdb-endpoint" v-model="cdbForm.endpoint" class="form-input">
+                <option v-for="opt in AUDIENCES" :key="opt.value" :value="opt.value">{{ opt.value }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Permissions</label>
+              <div class="scope-grid">
+                <label v-for="scope in cdbCurrentScopes" :key="scope" class="scope-item">
+                  <input type="checkbox" v-model="cdbSelectedScopes[scope]" />
+                  <span>{{ scope }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" :disabled="generatingCreds || !cdbForm.name" @click="handleGenerateCredentials">
+              {{ generatingCreds ? 'Generating…' : 'Create Credential' }}
+            </button>
+            <span v-if="credsError" class="save-feedback save-feedback--error">{{ credsError }}</span>
+          </div>
+
+          <div v-if="credsResult" class="cte-result">
+            <dl class="info-list">
+              <div class="info-item">
+                <dt>Client ID</dt>
+                <dd>{{ credsResult.clientId }}
+                  <button class="btn btn-ghost btn-sm" @click="copyCredsField('clientId')">
+                    {{ credsCopied === 'clientId' ? 'Copied!' : 'Copy' }}
+                  </button>
+                </dd>
+              </div>
+              <div class="info-item">
+                <dt>Client Secret</dt>
+                <dd>{{ credsSecretVisible ? credsResult.clientSecret : maskedPassword }}
+                  <button class="btn btn-ghost btn-sm" @click="credsSecretVisible = !credsSecretVisible">
+                    {{ credsSecretVisible ? 'Hide' : 'Show' }}
+                  </button>
+                  <button class="btn btn-ghost btn-sm" @click="copyCredsField('clientSecret')">
+                    {{ credsCopied === 'clientSecret' ? 'Copied!' : 'Copy' }}
+                  </button>
+                </dd>
+              </div>
+              <div class="info-item">
+                <dt>Username</dt>
+                <dd>{{ credsResult.name }}
+                  <button class="btn btn-ghost btn-sm" @click="copyCredsField('name')">
+                    {{ credsCopied === 'name' ? 'Copied!' : 'Copy' }}
+                  </button>
+                </dd>
+              </div>
+              <div class="info-item">
+                <dt>Password</dt>
+                <dd>
+                  <span
+                    class="secret-highlight"
+                    title="This value is only visible once — save it securely now or it will be lost."
+                  >{{ credsPasswordVisible ? credsResult.password : maskedPassword }}</span>
+                  <button class="btn btn-ghost btn-sm" @click="credsPasswordVisible = !credsPasswordVisible">
+                    {{ credsPasswordVisible ? 'Hide' : 'Show' }}
+                  </button>
+                  <button class="btn btn-ghost btn-sm" @click="copyCredsField('password')">
+                    {{ credsCopied === 'password' ? 'Copied!' : 'Copy' }}
+                  </button>
+                </dd>
+              </div>
+            </dl>
+            <p class="form-hint">Saved — head to <strong>ROPG</strong> to generate a token with these credentials.</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ════════════════════════════════════════
          TBD
     ═════════════════════════════════════════ -->
     <section v-if="activeFeature === 'tbd'" class="section">
@@ -476,7 +861,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
-import { exchangeToken } from '@/lib/igbcApi'
+import { exchangeToken, createCdbCredentials, getCdbCredentials, deleteCdbCredentials } from '@/lib/igbcApi'
 import { highlightJson, highlightJwt } from '@/lib/syntaxHighlight'
 
 const { getAccessTokenSilently } = useAuth0()
@@ -754,6 +1139,200 @@ async function handleRegisterApp() {
     registering.value = false
   }
 }
+
+const cdbForm = reactive({
+  name: '',
+  description: '',
+  expiration: '',
+  endpoint: AUDIENCES[0].value,
+})
+const cdbSelectedScopes = reactive({})
+const cdbCurrentScopes = computed(() => AUDIENCES.find((a) => a.value === cdbForm.endpoint)?.scopes ?? [])
+const cdbPermissions = computed(() => cdbCurrentScopes.value.filter((scope) => cdbSelectedScopes[scope]))
+
+const generatingCreds = ref(false)
+const credsError = ref('')
+const credsResult = ref(null)
+const credsCopied = ref('')
+const credsPasswordVisible = ref(false)
+const credsSecretVisible = ref(false)
+const maskedPassword = '•'.repeat(12)
+
+const step1Open = ref(true)
+const step2Open = ref(false)
+
+const createModalOpen = ref(false)
+
+function openCreateModal() {
+  cdbForm.name = ''
+  cdbForm.description = ''
+  cdbForm.expiration = ''
+  cdbForm.endpoint = AUDIENCES[0].value
+  Object.keys(cdbSelectedScopes).forEach((key) => delete cdbSelectedScopes[key])
+  credsError.value = ''
+  credsResult.value = null
+  credsPasswordVisible.value = false
+  credsSecretVisible.value = false
+  createModalOpen.value = true
+}
+
+function closeCreateModal() {
+  createModalOpen.value = false
+}
+
+async function handleGenerateCredentials() {
+  generatingCreds.value = true
+  credsError.value = ''
+  credsResult.value = null
+  credsPasswordVisible.value = false
+  credsSecretVisible.value = false
+  ropgResult.value = null
+  ropgError.value = ''
+  try {
+    const token = await getAccessTokenSilently()
+    credsResult.value = await createCdbCredentials(token, {
+      name: cdbForm.name,
+      description: cdbForm.description,
+      expiration: cdbForm.expiration,
+      endpoint: cdbForm.endpoint,
+      permissions: cdbPermissions.value,
+    })
+
+    // Carry the freshly minted credentials into Step 2 so the user doesn't re-type them.
+    ropgForm.clientId = credsResult.value.clientId
+    ropgForm.clientSecret = credsResult.value.clientSecret
+    ropgForm.username = credsResult.value.name
+    ropgForm.password = credsResult.value.password
+    ropgForm.audience = cdbForm.endpoint
+    ropgPasswordVisible.value = false
+    Object.keys(ropgSelectedScopes).forEach((key) => delete ropgSelectedScopes[key])
+    cdbPermissions.value.forEach((scope) => { ropgSelectedScopes[scope] = true })
+    step2Open.value = true
+    loadMyCredentials()
+  } catch (e) {
+    credsError.value = e?.message ?? 'Credential generation failed.'
+  } finally {
+    generatingCreds.value = false
+  }
+}
+
+async function copyCredsField(field) {
+  const value = credsResult.value?.[field]
+  if (!value) return
+  await navigator.clipboard.writeText(value)
+  credsCopied.value = field
+  setTimeout(() => { credsCopied.value = '' }, 2000)
+}
+
+const generatingRopgToken = ref(false)
+const ropgError = ref('')
+const ropgResult = ref(null)
+const ropgAccessTokenDecoded = ref(false)
+const ropgIdTokenDecoded = ref(false)
+const ropgCopied = ref('')
+const ropgPasswordVisible = ref(false)
+
+const ropgForm = reactive({
+  clientId: '',
+  clientSecret: '',
+  username: '',
+  password: '',
+  audience: AUDIENCES[0].value,
+})
+const ropgSelectedScopes = reactive({})
+const ropgCurrentScopes = computed(() => AUDIENCES.find((a) => a.value === ropgForm.audience)?.scopes ?? [])
+const ropgPermissions = computed(() => ropgCurrentScopes.value.filter((scope) => ropgSelectedScopes[scope]))
+const ropgFormValid = computed(() =>
+  Boolean(ropgForm.clientId && ropgForm.clientSecret && ropgForm.username && ropgForm.password && ropgForm.audience)
+)
+
+async function handleGenerateRopgToken() {
+  if (!ropgFormValid.value) return
+  generatingRopgToken.value = true
+  ropgError.value = ''
+  ropgResult.value = null
+  ropgAccessTokenDecoded.value = false
+  ropgIdTokenDecoded.value = false
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'http://auth0.com/oauth/grant-type/password-realm',
+      realm: 'Public-API-Users',
+      username: ropgForm.username,
+      password: ropgForm.password,
+      client_id: ropgForm.clientId,
+      client_secret: ropgForm.clientSecret,
+      audience: ropgForm.audience,
+      scope: ['openid', 'profile', 'offline_access', ...ropgPermissions.value].join(' '),
+    })
+    const res = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/oauth/token`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body,
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw new Error(data?.error_description || data?.error || `Request failed with status ${res.status}`)
+    }
+    ropgResult.value = data
+  } catch (e) {
+    ropgError.value = e?.message ?? 'ROPG token generation failed.'
+  } finally {
+    generatingRopgToken.value = false
+  }
+}
+
+async function copyRopgField(field) {
+  const value = ropgResult.value?.[field]
+  if (!value) return
+  await navigator.clipboard.writeText(value)
+  ropgCopied.value = field
+  setTimeout(() => { ropgCopied.value = '' }, 2000)
+}
+
+const mycredsLoading = ref(false)
+const mycredsError = ref('')
+const mycredsList = ref([])
+const identityClientId = ref('')
+const identityClientSecret = ref('')
+const identitySecretVisible = ref(false)
+
+async function loadMyCredentials() {
+  mycredsLoading.value = true
+  mycredsError.value = ''
+  try {
+    const token = await getAccessTokenSilently()
+    const data = await getCdbCredentials(token)
+    mycredsList.value = data?.credentials ?? []
+    identityClientId.value = data?.clientId ?? ''
+    identityClientSecret.value = data?.clientSecret ?? ''
+    identitySecretVisible.value = false
+  } catch (e) {
+    mycredsError.value = e?.message ?? 'Failed to load credentials.'
+  } finally {
+    mycredsLoading.value = false
+  }
+}
+
+watch(activeFeature, (key) => {
+  if (key === 'mycreds') loadMyCredentials()
+})
+
+const deletingCredIdentity = ref('')
+
+async function handleDeleteCredential(cred) {
+  if (!confirm(`Delete credential "${cred.name}"? This cannot be undone.`)) return
+  deletingCredIdentity.value = cred.identity
+  mycredsError.value = ''
+  try {
+    const token = await getAccessTokenSilently()
+    await deleteCdbCredentials(token, cred.identity)
+    await loadMyCredentials()
+  } catch (e) {
+    mycredsError.value = e?.message ?? 'Failed to delete credential.'
+  } finally {
+    deletingCredIdentity.value = ''
+  }
+}
 </script>
 
 <style scoped>
@@ -894,6 +1473,66 @@ async function handleRegisterApp() {
   color: #b91c1c;
 }
 
+.form-hint--warning {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.input-with-action {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input-with-action .form-input {
+  flex: 1;
+}
+
+.ropg-step + .ropg-step {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--auth0-accentuate-4);
+}
+
+.ropg-step-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  user-select: none;
+}
+
+.ropg-step-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ropg-step-summary::before {
+  content: '▸';
+  color: var(--auth0-accentuate-2);
+  transition: transform 0.15s ease;
+}
+
+.ropg-step[open] > .ropg-step-summary::before {
+  transform: rotate(90deg);
+}
+
+.ropg-step-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--auth0-accentuate-1);
+}
+
+.ropg-step-hint {
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.ropg-step-body {
+  margin-top: 1rem;
+}
+
 .cimd-note {
   font-size: 0.85rem;
   padding: 0.75rem 1rem;
@@ -945,7 +1584,72 @@ async function handleRegisterApp() {
   color: var(--auth0-accentuate-1);
 }
 
+.creds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.creds-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--auth0-accentuate-2);
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--auth0-accentuate-4);
+}
+
+.creds-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--auth0-accentuate-4);
+  color: var(--auth0-accentuate-1);
+  vertical-align: middle;
+}
+
+.creds-table .badge {
+  margin: 0 0.25rem 0.25rem 0;
+}
+
+.btn-delete {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+.btn-delete:hover:not(:disabled) {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
+.secret-highlight {
+  background-color: #fee2e2;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  cursor: help;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 0, 58, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
+  .creds-table { font-size: 0.78rem; }
 }
 </style>

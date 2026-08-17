@@ -33,3 +33,18 @@ export function updateConsents(token, data) {
 export function exchangeToken(token, audience, scope) {
   return request('/api/security/cte', { method: 'POST', token, body: { audience, ...(scope && { scope }) } })
 }
+
+// Custom Database (CDB) provisioning — experimental, self-only
+export function createCdbCredentials(token, data) {
+  return request('/api/security/cdb', { method: 'POST', token, body: data })
+}
+
+// Reads back the caller's Public-API-Users identity + app_metadata['api-credentials']
+export function getCdbCredentials(token) {
+  return request('/api/security/cdb', { token })
+}
+
+// Unlinks + deletes the secondary user and removes it from api-credentials — only `identity` is used server-side
+export function deleteCdbCredentials(token, identity) {
+  return request('/api/security/cdb', { method: 'DELETE', token, body: { identity } })
+}
