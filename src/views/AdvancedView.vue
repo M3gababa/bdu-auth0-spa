@@ -1177,6 +1177,7 @@ function openCreateModal() {
 }
 
 function closeCreateModal() {
+  if (credsResult.value && !confirm('Did you save the password? It cannot be seen again once you close this window.')) return
   createModalOpen.value = false
 }
 
